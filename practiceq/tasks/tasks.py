@@ -80,7 +80,7 @@ def automate():
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
-    result = chain(initialize(),getAllBags(),gen_derivative())
+    result = chain(initialize.s(),getAllBags.s(),gen_derivative.s())
     result.delay()
     return "automate kicked off"
 """

@@ -97,8 +97,9 @@ def updateCatalog(bag):
         print("yes")
 @task
 def gen_recipe(bag,i):
+    global dervdic
     if bag['status']:
-       global dervdic[i].update({'recipe':"recipe/"+bag['derivative'].split('/')[1]})
+        dervdic[i].update({'recipe':"recipe/"+bag['derivative'].split('/')[1]})
 
 @task
 def status_check_gen_recipe(bag,i):

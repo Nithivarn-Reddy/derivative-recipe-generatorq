@@ -1,6 +1,6 @@
 import json
 from celery.task import task
-from celery import chain
+from celery import chain,group
 import requests
 
 def jprint(obj):
@@ -66,13 +66,14 @@ def getAllBags(str):
     #pageList.append(res.status_code)
 #print(len(pageList))
 #print("\ncount of bags{}".format(len(bagList)))
-
+dervdic =[]
 @task
 def gen_derivative(bags):
-    dervlist =[]
-    for bag in bags:
-        dervlist.append("derivative/"+bag)
-    return dervlist
+    global dervdic
+    for i,bag in enumerate(bags):
+        dervdic.append({'derivative':"derivative/"+bag,'status':True})
+        status_check_gen_recipe(dervdic[i],i)
+    return dervdic
 #print(gen_derivative(bagList))
 @task
 def automate():
@@ -90,4 +91,18 @@ derv=gen_derivative(li)
 
 print(len(derv))
 """
+@task
+def updateCatalog(bag):
+    if bag['status']:
+        print("yes")
+@task
+def gen_recipe(bag,i):
+    if bag['status']:
+        dervdic[i].update({'recipe':"recipe/"+bag['derivative'].split('/')[1]})
+
+@task
+def status_check_gen_recipe(bag,i):
+    grp = group(updateCatalog.s(bag),gen_recipe(bag,i))
+    grp.delay()
+    return "kicked off updatecatalog and gen_recipe"
 

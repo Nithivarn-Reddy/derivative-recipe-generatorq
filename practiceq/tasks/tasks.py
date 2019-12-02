@@ -102,7 +102,7 @@ def gen_recipe(bag,i):
 
 @task
 def status_check_gen_recipe(bag,i):
-    grp = group(updateCatalog.s(bag),gen_recipe(bag,i))
+    grp = group(updateCatalog.s(bag),gen_recipe.s(bag,i))
     grp.delay()
     return "kicked off updatecatalog and gen_recipe"
 

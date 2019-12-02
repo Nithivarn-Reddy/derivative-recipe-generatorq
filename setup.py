@@ -10,6 +10,5 @@ setup(name='practiceq',
           'requests==2.20.0',
           'PyYAML==3.12',
           'boto3',
-          'lxml',
       ],
 )

@@ -162,8 +162,7 @@ def getAllBags():
         bagList.append(obj.get('bag'))
 @task
 def getSample(bags):
-    random_bags= np.random.choice(bags,5,replace=True)
-    return random_bags
+    return list(np.random.choice(bags,5,replace=True))
 @task
 def automate():
     """
@@ -174,3 +173,5 @@ def automate():
     result.delay()
     return "automate kicked off"
 
+getAllBags()
+print(getSample(bagList))

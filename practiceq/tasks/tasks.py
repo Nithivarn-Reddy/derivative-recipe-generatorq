@@ -1,3 +1,6 @@
+from random import random
+
+import numpy as np
 import requests
 from celery import chain
 from celery.task import task
@@ -10,14 +13,6 @@ import os,boto3,shutil
 basedir = "/data/web_data/static"
 hostname = "https://cc.lib.ou.edu"
 bagList=[]
-def getBags(results):
-    """
-      :param results: results list from each json object
-      :return: list of bags
-    """
-    global bagList
-    for idx,dic in enumerate(results):
-        bagList.append(dic.get('bag'))
 
 def _formatextension(imageformat):
     """ get common file extension of image format """
@@ -159,33 +154,23 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
     return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams}
 
 @task
-def initialize():
-    response = requests.get('https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true},"derivatives.jpeg_040_antialias.recipe":{"$exists":false}}}&format=json')
-    print(response.status_code)
+def getAllBags():
+    response = requests.get('https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true},"derivatives.jpeg_040_antialias.recipe":{"$exists":false}}}&format=json&page_size=0')
     jobj = response.json()
-    getBags(jobj.get('results'))
-    str = jobj.get('next')
-    return str
-
+    results=jobj.get('results')
+    for obj in results:
+        bagList.append(obj.get('bag'))
 @task
-def getAllBags(str):
-    while str:
-        res = requests.get(str+'&format=json')
-        jobj = res.json()
-        results = jobj.get('results')
-        getBags(results)
-       # print("No of bags collected by page {0} {1} \n".format(i,len(bagList)))
-        #i+=1
-        str=jobj.get('next')
-    return bagList
-
+def getSample(bags):
+    random_bags= np.random.choice(bags,5,replace=True)
+    return random_bags
 @task
 def automate():
     """
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
-    result = chain(initialize.s(),getAllBags.s(),derivative_generation.s())
+    result = chain(getAllBags.s(),getSample.s(),derivative_generation.s())
     result.delay()
     return "automate kicked off"
 

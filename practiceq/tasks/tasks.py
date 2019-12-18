@@ -173,5 +173,4 @@ def automate():
     result.delay()
     return "automate kicked off"
 
-getAllBags()
-print(getSample(bagList))
+

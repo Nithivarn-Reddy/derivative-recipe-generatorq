@@ -1,4 +1,5 @@
 import random
+
 import requests
 from celery import chain
 from celery.task import task
@@ -158,9 +159,10 @@ def getAllBags():
     results=jobj.get('results')
     for obj in results:
         bagList.append(obj.get('bag'))
+    return bagList
 @task
 def getSample(bags):
-    return random.choices(bags, k=4)
+    return list(random.sample(bags, 4))
 @task
 def automate():
     """
@@ -170,4 +172,5 @@ def automate():
     result = chain(getAllBags.s(),getSample.s(),derivative_generation.s())
     result.delay()
     return "automate kicked off"
+
 

@@ -10,6 +10,6 @@ setup(name='practiceq',
           'requests==2.20.0',
           'pyyaml>=4.2b1',
 	  'pillow==6.2.0',
-          'boto3',
+          'boto3~=1.6',
       ],
 )

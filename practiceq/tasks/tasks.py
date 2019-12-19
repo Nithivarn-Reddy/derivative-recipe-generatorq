@@ -11,7 +11,7 @@ import os,boto3,shutil
 
 basedir = "/data/web_data/static"
 hostname = "https://cc.lib.ou.edu"
-bagList=[]
+
 
 def _formatextension(imageformat):
     """ get common file extension of image format """
@@ -151,26 +151,30 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
     if not upload_s3:
         return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":None,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams}
     return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams}
+bagList=[]
 
-@task
 def getAllBags():
     response = requests.get('https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true},"derivatives.jpeg_040_antialias.recipe":{"$exists":false}}}&format=json&page_size=0')
     jobj = response.json()
     results=jobj.get('results')
     for obj in results:
-        bagList.append(obj.get('bag'))
-    return bagList
+        yield obj.get('bag')
+
 @task
-def getSample(bags):
-    return list(random.sample(bags, 4))
+def getSample():
+    try:
+        return list(random.sample(list(getAllBags()), 4))
+    except:
+        return getAllBags()
 @task
 def automate():
     """
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
-    result = chain(getAllBags.s(),getSample.s(),derivative_generation.s())
+    result = chain(getSample.s(),derivative_generation.s())
     result.delay()
     return "automate kicked off"
+
 
 

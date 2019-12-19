@@ -1,6 +1,4 @@
 import random
-
-import numpy as np
 import requests
 from celery import chain
 from celery.task import task

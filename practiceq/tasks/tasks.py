@@ -1,4 +1,4 @@
-from random import random
+import random
 
 import numpy as np
 import requests
@@ -118,7 +118,7 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(s3_bucket)
     formatparams = _params_as_string(outformat=outformat, filter=filter, scale=scale, crop=crop)
-    for bag in bags.split(','):
+    for bag in bags:
         derivative_keys=[]
         src_input = os.path.join(resultpath,'src/',bag)
         output = os.path.join(resultpath,'derivative/',bag)
@@ -162,7 +162,7 @@ def getAllBags():
         bagList.append(obj.get('bag'))
 @task
 def getSample(bags):
-    return list(np.random.choice(bags,5,replace=True))
+    return random.choices(bags, k=4)
 @task
 def automate():
     """
@@ -172,5 +172,4 @@ def automate():
     result = chain(getAllBags.s(),getSample.s(),derivative_generation.s())
     result.delay()
     return "automate kicked off"
-
 

@@ -177,7 +177,7 @@ def automate():
     return "automate kicked off"
 @task
 def read():
-    entries = os.listdir('s3/')
+    entries = os.listdir('mnt/')
     return entries
 
 

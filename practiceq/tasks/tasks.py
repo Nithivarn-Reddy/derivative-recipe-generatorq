@@ -175,6 +175,9 @@ def automate():
     result = chain(getSample.s(),derivative_generation.s())
     result.delay()
     return "automate kicked off"
-
+@task
+def read():
+    entries = os.listdir('s3/')
+    return entries
 
 

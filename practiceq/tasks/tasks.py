@@ -180,4 +180,3 @@ def read():
     entries = os.listdir('/data')
     return entries
 
-

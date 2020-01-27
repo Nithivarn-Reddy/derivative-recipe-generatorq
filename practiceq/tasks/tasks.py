@@ -91,7 +91,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
 
 @task()
-def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destination='derivative',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None, upload_s3=False):
+def derivative_generation(bags,s3_bucket='ul-cc',s3_source='source',s3_destination='derivative',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None, upload_s3=False):
     """
         This task is used for derivative generation for the OU Library. This does not use the data catalog.
         Bags do not have to be valid. TIFF or TIF files are transformed and upload to AWS S3 destination.

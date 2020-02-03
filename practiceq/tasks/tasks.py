@@ -185,7 +185,7 @@ def read():
 
     """
     path = '/mnt/{0}/{1}'.format("source","Abbati_1703")
-    entries = glob.glob(path)
+    entries = glob.glob(path+'/*')
     return entries
 
 

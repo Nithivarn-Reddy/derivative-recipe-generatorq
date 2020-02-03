@@ -124,6 +124,7 @@ def derivative_generation(bags,s3_bucket='ul-cc',s3_source='source',s3_destinati
         os.makedirs(src_input)
         os.makedirs(output)
         source_location = "{0}/{1}/data".format(s3_source,bag)
+        
         for obj in bucket.objects.filter(Prefix=source_location):
             filename=obj.key
             if filename.split('.')[-2][-5:].lower() == '_orig':
@@ -177,6 +178,6 @@ def automate():
     return "automate kicked off"
 @task
 def read():
-    entries = os.listdir('/data')
+    entries = os.listdir('/mnt')
     return entries
 

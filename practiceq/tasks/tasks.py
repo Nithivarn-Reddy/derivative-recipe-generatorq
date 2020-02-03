@@ -184,7 +184,8 @@ def read():
     source = source file.
 
     """
-    entries = glob.glob('/mnt/{0}/{1}').format("source","Abbati_1703")
+    path = '/mnt/{0}/{1}'.format("source","Abbati_1703")
+    entries = glob.glob(path)
     return entries
 
 

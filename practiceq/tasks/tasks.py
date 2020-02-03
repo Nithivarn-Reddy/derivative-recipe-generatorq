@@ -7,6 +7,7 @@ from PIL import Image
 from subprocess import check_call, check_output
 from tempfile import NamedTemporaryFile
 import os,boto3,shutil
+import glob as glob
 
 
 basedir = "/data/web_data/static"
@@ -178,6 +179,12 @@ def automate():
     return "automate kicked off"
 @task
 def read():
-    entries = os.listdir('/mnt')
+    """
+    bagname = Abbati_1703
+    source = source file.
+
+    """
+    entries = glob.glob('/mnt/{0}/{1}').format("source","Abbati_1703")
     return entries
+
 

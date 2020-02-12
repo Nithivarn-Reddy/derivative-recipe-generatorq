@@ -244,12 +244,12 @@ def read():
     li = []
     #os.makedirs(outpath)
     print(os.getuid(), os.getgid())
-
+    print(check_output(['ls','-l','/mnt/']))
 """
  for file in os.listdir('/mnt/source/'):
         #li.append(file)
         #processimage(inpath=file,outpath=outpath)
-    return li
+    return 
 
 """
 

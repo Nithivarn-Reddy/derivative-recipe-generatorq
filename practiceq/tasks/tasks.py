@@ -239,11 +239,11 @@ def read():
     source = source file.
 
     """
-    path = 'mnt/{0}/{1}/data/'.format("source","Abbati_1703")
+    path = '/mnt/{0}/{1}/data/'.format("source","Abbati_1703")
     outpath = '/mnt/{0}/{1}/data/'.format("derivative","Abbati_1703")
     li = []
     #os.makedirs(outpath)
-    for file in os.listdir('/mnt/'):
+    for file in os.listdir(path):
         li.append(file)
         #processimage(inpath=file,outpath=outpath)
     return li

@@ -241,9 +241,12 @@ def read():
     """
     path = '/mnt/{0}/{1}/data/*.tif'.format("source","Abbati_1703")
     outpath = '/mnt/{0}/{1}/data/'.format("derivative","Abbati_1703")
+    li = []
+    #os.makedirs(outpath)
     for file in glob.glob(path):
-        processimage(inpath=file,outpath=outpath)
-
+        li.append(file)
+        #processimage(inpath=file,outpath=outpath)
+    return li
 
 
 

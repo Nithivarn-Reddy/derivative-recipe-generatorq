@@ -243,7 +243,7 @@ def read():
     outpath = '/mnt/{0}/{1}/data/'.format("derivative","Abbati_1703")
     li = []
     #os.makedirs(outpath)
-    print(os.getuid()+"group id" + os.getgid())
+    print(os.getuid(), os.getgid())
 
 """
  for file in os.listdir('/mnt/source/'):

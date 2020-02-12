@@ -245,10 +245,13 @@ def read():
     #os.makedirs(outpath)
     print(os.getuid()+"group id" + os.getgid())
 
-    for file in os.listdir('/mnt/source/'):
+"""
+ for file in os.listdir('/mnt/source/'):
         #li.append(file)
         #processimage(inpath=file,outpath=outpath)
     return li
+
+"""
 
 
 

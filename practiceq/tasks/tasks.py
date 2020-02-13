@@ -239,13 +239,15 @@ def read():
     source = source file.
 
     """
-    path = '/mnt/{0}/{1}/data/'.format("source","Abbati_1703")
+    path = '/mnt/{0}/{1}/data/*.tif'.format("source","Abbati_1703")
     outpath = '/mnt/{0}/{1}/data/'.format("derivative","Abbati_1703")
     li = []
     #os.makedirs(outpath)
     print(os.getuid(), os.getgid())
-    print(check_output(['ls','-l','/mnt/']))
-    for file in os.listdir('/mnt/source/'):
+    #print(check_output(['ls','-l','/mnt/']))
+    print(glob.glob(path))
+    #os.listdir('/mnt/source/')
+    for file in glob.glob(path):
         li.append(file)
         print(file)
         #processimage(inpath=file,outpath=outpath)

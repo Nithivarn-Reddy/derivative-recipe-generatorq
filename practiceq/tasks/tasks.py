@@ -247,14 +247,9 @@ def read():
     #print(check_output(['ls','-l','/mnt/']))
     print(glob.glob(path))
     #os.listdir('/mnt/source/')
-    os.makedirs(outpath)
-    """
     for file in glob.glob(path):
-        li.append(file)
-        print(file)
-        #processimage(inpath=file,outpath=outpath)
-    return li
-    """
+        processimage(inpath=file,outpath=outpath)
+
 
 
 

@@ -187,10 +187,14 @@ def read():
 
     """
     path = '/mnt/{0}/{1}/data/*.tif'.format("source","Abbati_1703")
-    li = []
+    bag = "Abbati_1703"
+    outdir = "/mnt/derivative/{0}/data".format(bag)
+
     #os.makedirs(outpath)
     print(os.getuid(), os.getgid())
     #print(check_output(['ls','-l','/mnt/']))
+    if "data" not in check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)]):
+        os.makedirs(outdir)
     print(glob.glob(path))
     #os.listdir('/mnt/source/')
     for file in glob.glob(path):

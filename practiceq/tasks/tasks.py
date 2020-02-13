@@ -245,13 +245,13 @@ def read():
     #os.makedirs(outpath)
     print(os.getuid(), os.getgid())
     print(check_output(['ls','-l','/mnt/']))
-"""
- for file in os.listdir('/mnt/source/'):
-        #li.append(file)
+    for file in os.listdir('/mnt/source/'):
+        li.append(file)
+        print(file)
         #processimage(inpath=file,outpath=outpath)
-    return 
+    return li
 
-"""
+
 
 
 

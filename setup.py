@@ -9,7 +9,7 @@ setup(name='practiceq',
           'bagit==1.5.4',
           'requests==2.20.0',
           'pyyaml>=4.2b1',
-	  'pillow==6.2.0',
+	  'pillow==7.0.0',
           'boto3~=1.6',
       ],
 )

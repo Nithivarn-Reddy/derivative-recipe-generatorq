@@ -40,23 +40,16 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
     """
     Internal function to create image derivatives
     """
-
-    try:
-        image = Image.open(inpath)
-    except (IOError, OSError):
-        # workaround for Pillow not handling 16bit images
-        if "16-bit" in check_output(("identify", inpath)):
-            with NamedTemporaryFile() as tmpfile:
-                check_call(("convert", inpath, "-depth", "8", tmpfile.name))
-                image = Image.open(tmpfile.name)
-        else:
-            raise Exception
+    image = Image.open(inpath)
 
     if crop:
         image = image.crop(crop)
 
     if scale:
-        imagefilter = getattr(Image, filter.upper())
+        try:
+            imagefilter = getattr(Image, filter.upper())
+        except(AttributeError):
+            print("Please Provide the correct filter for Image e.g - ANTIALIAS")
         size = [x * scale for x in image.size]
         image.thumbnail(size, imagefilter)
 
@@ -180,15 +173,17 @@ def automate():
 
 
 @task
-def read():
+def readSource_updateDerivative(s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTALIAS',scale=None, crop=None):
     """
     bagname = Abbati_1703
     source = source file.
 
     """
-    path = '/mnt/{0}/{1}/data/*.tif'.format("source","Abbati_1703")
+    taskid = str(read.request.id)
+
+    path = '/mnt/{0}/{1}/data/*.tif'.format(s3_source,"Abbati_1703")
     bag = "Abbati_1703"
-    outdir = "/mnt/derivative/{0}/data".format(bag)
+    outdir = "/mnt/{0}/{1}/data".format(s3_destination,bag)
 
     #os.makedirs(outpath)
     print(os.getuid(), os.getgid())
@@ -198,8 +193,8 @@ def read():
     print(glob.glob(path))
     #os.listdir('/mnt/source/')
     for file in glob.glob(path):
-        outpath = '/mnt/{0}/{1}/data/{2}.{3}'.format("derivative", "Abbati_1703",file.split('/')[-1].split('.')[0].lower(),"JPEG")
-        processimage(inpath=file,outpath=outpath,outformat="JPEG")
+        outpath = '/mnt/{0}/{1}/data/{2}.{3}'.format("derivative", "Abbati_1703",file.split('/')[-1].split('.')[0].lower(),_formatextension("JPEG"))
+        processimage(inpath=file,outpath=outpath,outformat=_formatextension("JPEG"))
 
 
 

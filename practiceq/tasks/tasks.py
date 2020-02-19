@@ -115,36 +115,34 @@ def automate():
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
-    result = chain(getSample.s(),derivative_generation.s())
+    result = chain(getSample.s(),readSource_updateDerivative.s())
     result.delay()
     return "automate kicked off"
 
 
 @task
-def readSource_updateDerivative(s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTALIAS',scale=None, crop=None):
+def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTALIAS',scale=None, crop=None):
     """
     bagname = Abbati_1703
     source = source file.
 
     """
-    task_id = str(readSource_updateDerivative.request.id)
+    for bag in bags:
+        task_id = str(readSource_updateDerivative.request.id)
 
-    path = '/mnt/{0}/{1}/data/*.tif'.format(s3_source,"Abbati_1703")
-    bag = "Abbati_1703"
-    outdir = "/mnt/{0}/{1}/data".format(s3_destination,bag)
+        path = '/mnt/{0}/{1}/data/*.tif'.format(s3_source,bag)
+        outdir = "/mnt/{0}/{1}/data".format(s3_destination,bag)
+        print(os.getuid(), os.getgid())
+        #print(check_output(['ls','-l','/mnt/']))
+        if "data" not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
+            os.makedirs(outdir)
+        #print(glob.glob(path))
 
-    #os.makedirs(outpath)
-    print(os.getuid(), os.getgid())
-    #print(check_output(['ls','-l','/mnt/']))
-    if "data" not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
-        os.makedirs(outdir)
-    print(glob.glob(path))
-    #os.listdir('/mnt/source/')
-    for file in glob.glob(path):
-        outpath = '/mnt/{0}/{1}/data/{2}.{3}'.format("derivative", "Abbati_1703",file.split('/')[-1].split('.')[0].lower(),_formatextension("JPEG"))
-        processimage(inpath=file,outpath=outpath,outformat=_formatextension("JPEG"))
+        for file in glob.glob(path):
+            outpath = '/mnt/{0}/{1}/data/{2}.{3}'.format("derivative", bag,file.split('/')[-1].split('.')[0].lower(),_formatextension("JPEG"))
+            processimage(inpath=file,outpath=outpath,outformat=_formatextension("JPEG"))
     return {"local_derivatives": "{0}/oulib_tasks/{1}".format(hostname, task_id), "s3_destination": s3_destination,
-            "task_id": task_id}
+            "task_id": task_id,"bags":bags}
 
 
 

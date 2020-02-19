@@ -179,7 +179,7 @@ def readSource_updateDerivative(s3_source="source",s3_destination="derivative",o
     source = source file.
 
     """
-    taskid = str(read.request.id)
+    taskid = str(readSource_updateDerivative.request.id)
 
     path = '/mnt/{0}/{1}/data/*.tif'.format(s3_source,"Abbati_1703")
     bag = "Abbati_1703"

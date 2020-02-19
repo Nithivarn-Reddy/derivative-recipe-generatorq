@@ -39,6 +39,8 @@ def _params_as_string(outformat="", filter="", scale=None, crop=None):
 def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
     Internal function to create image derivatives
+
+    jpg as outformat isn't available . So checking whether outformat is jpg or 'tif' so that we can save it directly
     """
     image = Image.open(inpath)
 
@@ -55,7 +57,10 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
     if(outformat == 'jpg' or outformat=='tif'):
         image.save(outpath)
     else:
-        image.save(outpath,outformat)
+        try:
+            image.save(outpath,outformat)
+        except KeyError:
+            print("Please Provide the correct OutputFormat for the image")
 
 @task()
 def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):

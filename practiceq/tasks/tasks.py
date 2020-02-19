@@ -188,7 +188,7 @@ def readSource_updateDerivative(s3_source="source",s3_destination="derivative",o
     #os.makedirs(outpath)
     print(os.getuid(), os.getgid())
     #print(check_output(['ls','-l','/mnt/']))
-    if "data" not in check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)]):
+    if "data" not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
         os.makedirs(outdir)
     print(glob.glob(path))
     #os.listdir('/mnt/source/')

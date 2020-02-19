@@ -52,8 +52,10 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
             print("Please Provide the correct filter for Image e.g - ANTIALIAS")
         size = [x * scale for x in image.size]
         image.thumbnail(size, imagefilter)
-
-    image.save(outpath, outformat)
+    if(outformat == 'jpg' or outformat=='tif'):
+        image.save(outpath)
+    else:
+        image.save(outpath,outformat)
 
 @task()
 def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):

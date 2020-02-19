@@ -123,7 +123,7 @@ def automate():
 @task
 def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTALIAS',scale=None, crop=None):
     """
-    bagname = Abbati_1703
+    bagname = List containing bagnames eg : [bag1,bag2...]
     source = source file.
 
     """

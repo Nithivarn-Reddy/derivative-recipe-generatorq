@@ -41,6 +41,7 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
     Internal function to create image derivatives
 
     jpg as outformat isn't available . So checking whether outformat is jpg or 'tif' so that we can save it directly
+    with the outpath extension available. Else save it with image.save(outpath,outformat).
     """
     image = Image.open(inpath)
 
@@ -91,68 +92,8 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
 
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
 
-@task()
-def derivative_generation(bags,s3_bucket='ul-cc',s3_source='source',s3_destination='derivative',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None, upload_s3=False):
-    """
-        This task is used for derivative generation for the OU Library. This does not use the data catalog.
-        Bags do not have to be valid. TIFF or TIF files are transformed and upload to AWS S3 destination.
 
-        args:
-            bags (string): comma separated list of bags. Example - 'bag1,bag2,bag3'
-        kwargs:
-            s3_bucket (string); Defult 'ul-bagit'
-            s3_source (string): Default 'source'
-            s3_destination (string): Default 'derivative'
-            outformat - string representation of image format - default is "TIFF".
-                        Available Formats: http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html
-            scale - percentage to scale by represented as a decimal
-            filter - string representing filter to apply to resized image - default is "ANTIALIAS"
-            crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
-            upload_s3 (boolean) - upload derivative images to S3
-    """
-    task_id = str(derivative_generation.request.id)
-    #create Result Directory
-    resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
-    os.makedirs(resultpath)
-    #s3 boto
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(s3_bucket)
-    formatparams = _params_as_string(outformat=outformat, filter=filter, scale=scale, crop=crop)
-    for bag in bags:
-        derivative_keys=[]
-        src_input = os.path.join(resultpath,'src/',bag)
-        output = os.path.join(resultpath,'derivative/',bag)
-        os.makedirs(src_input)
-        os.makedirs(output)
-        source_location = "{0}/{1}/data".format(s3_source,bag)
-        
-        for obj in bucket.objects.filter(Prefix=source_location):
-            filename=obj.key
-            if filename.split('.')[-2][-5:].lower() == '_orig':
-                # skip files similar to 001_orig.tif, etc.
-                continue
-            if filename.split('/')[-1][0] == '.':
-                # skip files starting with a period
-                continue
-            if filename.split('.')[-1].lower()=='tif' or filename.split('.')[-1].lower()=='tiff':
-                inpath="{0}/{1}".format(src_input,filename.split('/')[-1])
-                s3.meta.client.download_file(bucket.name, filename, inpath)
-                outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
-                #process image
-                _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
-                os.remove(inpath) # remove src image after generating derivative
-                if upload_s3:
-                    #upload derivative to s3
-                    fname=filename.split('/')[-1].split('.')[0].lower()
-                    s3_key = "{0}/{1}/{2}/{3}.{4}".format(s3_destination,bag,formatparams,fname,_formatextension(outformat))
-                    derivative_keys.append(s3_key)
-                    #upload to
-                    s3.meta.client.upload_file(outpath, bucket.name, s3_key)
-        shutil.rmtree(os.path.join(resultpath,'src/',bag))
-    shutil.rmtree(os.path.join(resultpath,'src/'))
-    if not upload_s3:
-        return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":None,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams}
-    return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams}
+
 bagList=[]
 
 def getAllBags():
@@ -186,7 +127,7 @@ def readSource_updateDerivative(s3_source="source",s3_destination="derivative",o
     source = source file.
 
     """
-    taskid = str(readSource_updateDerivative.request.id)
+    task_id = str(readSource_updateDerivative.request.id)
 
     path = '/mnt/{0}/{1}/data/*.tif'.format(s3_source,"Abbati_1703")
     bag = "Abbati_1703"
@@ -202,7 +143,8 @@ def readSource_updateDerivative(s3_source="source",s3_destination="derivative",o
     for file in glob.glob(path):
         outpath = '/mnt/{0}/{1}/data/{2}.{3}'.format("derivative", "Abbati_1703",file.split('/')[-1].split('.')[0].lower(),_formatextension("JPEG"))
         processimage(inpath=file,outpath=outpath,outformat=_formatextension("JPEG"))
-
+    return {"local_derivatives": "{0}/oulib_tasks/{1}".format(hostname, task_id), "s3_destination": s3_destination,
+            "task_id": task_id}
 
 
 

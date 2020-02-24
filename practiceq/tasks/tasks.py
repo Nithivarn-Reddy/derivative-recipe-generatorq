@@ -8,9 +8,13 @@ from subprocess import check_call, check_output
 from tempfile import NamedTemporaryFile
 import os,boto3,shutil
 import glob as glob
+import yaml
+import logging
+import re
+from collections import OrderedDict
 
 
-basedir = "/data/web_data/static"
+#basedir = "/data/web_data/static"
 hostname = "https://cc.lib.ou.edu"
 
 
@@ -119,33 +123,73 @@ def automate():
     result.delay()
     return "automate kicked off"
 
+def get_mmsid(path_to_bag):
+    #s3_bucket='ul-bagit'
+    #s3 = boto3.resource('s3')
+    #s3_key = "{0}/{1}/{2}".format('source', bag, 'bag-info.txt')
+    #recipe_obj = s3.Object(s3_bucket, s3_key)
+    fh =open(path_to_bag+"bag-info.txt")
+    bag_info = yaml.load(fh)
+    try:
+        mmsid = bag_info['FIELD_EXTERNAL_DESCRIPTION'].split()[-1].strip()
+    except KeyError:
+        logging.error("Cannot determine mmsid for bag: {0}".format(bag))
+        return None
+    if re.match("^[0-9]+$", mmsid):  # check that we have an mmsid like value
+        return mmsid
+    return None
+
 
 @task
 def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTALIAS',scale=None, crop=None):
     """
     bagname = List containing bagnames eg : [bag1,bag2...]
     source = source file.
+    outformat = "TIFF or jpeg or jpg or tif"
+    filter = "ANTALIAS" - filter type of the image.
+    scale = At what scale do you need the reduction of the size - eg 0.40 or o.20
+    crop = size in which the image needs to be cropped, Provide it as a list - eg - [10,10,20,40]
 
     """
+    bags_with_mmsids = OrderedDict()
     for bag in bags:
         task_id = str(readSource_updateDerivative.request.id)
+        formatparams = _params_as_string(outformat,filter,scale,crop)
 
-        path = '/mnt/{0}/{1}/data/*.tif'.format(s3_source,bag)
-        outdir = "/mnt/{0}/{1}/data".format(s3_destination,bag)
-        print(os.getuid(), os.getgid())
+        path_to_bag = "/mnt/{0}/{1}/".format(s3_source,bag)
+        mmsid =get_mmsid(path_to_bag)
+        bags_with_mmsids[bag]=OrderedDict()
+        bags_with_mmsids[bag]['mmsid']=mmsid
+        path_to_tif_files_of_bag = "/mnt/{0}/{1}/data/*.tif".format(s3_source,bag)
+        outdir = "/mnt/{0}/{1}/data/{2}".format(s3_destination,bag,formatparams)
+        #print(os.getuid(), os.getgid())
         #print(check_output(['ls','-l','/mnt/']))
         if "data" not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
             os.makedirs(outdir)
         #print(glob.glob(path))
 
-        for file in glob.glob(path):
-            outpath = '/mnt/{0}/{1}/data/{2}.{3}'.format("derivative", bag,file.split('/')[-1].split('.')[0].lower(),_formatextension("JPEG"))
-            processimage(inpath=file,outpath=outpath,outformat=_formatextension("JPEG"))
+        for file in glob.glob(path_to_tif_files_of_bag):
+            outpath = '/mnt/{0}/{1}/data/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
+            processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat))
     return {"local_derivatives": "{0}/oulib_tasks/{1}".format(hostname, task_id), "s3_destination": s3_destination,
-            "task_id": task_id,"bags":bags}
+            "task_id": task_id,"bags":bags_with_mmsids,"format_params":formatparams}
 
+"""
+@task
+def generate_recipe(derivative_args):
+"""
+"""
+    This function generates the recipe file and returns the json structure for each bag.
 
+    params:
+    derivative_args:The arguments returned by readSource_updateDerivative function.
+"""
+"""
+    task_id= derivative_args.get('task_id')
+    bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
+    formatparams = derivative_args.get('format_params')
 
+"""
 
 
 

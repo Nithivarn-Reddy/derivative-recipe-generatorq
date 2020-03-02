@@ -12,10 +12,21 @@ import yaml
 import logging
 import re
 from collections import OrderedDict
+from json import loads,dumps
+from celery import Celery
+import celeryconfig
+app = Celery()
+app.config_from_object(celeryconfig)
 
 
 #basedir = "/data/web_data/static"
-hostname = "https://cc.lib.ou.edu"
+#hostname = "https://cc.lib.ou.edu"
+base_url = "https://cc.lib.ou.edu"
+api_url = "{0}/api".format(base_url)
+catalog_url = "{0}/catalog/data/catalog/digital_objects/.json".format(api_url)
+search_url = "{0}?query={{\"filter\": {{\"bag\": \"{1}\"}}}}"
+apikeypath = "/code/alma_api_key"
+cctokenfile = "/code/cybercom_token"
 
 
 def _formatextension(imageformat):
@@ -94,7 +105,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
                   crop=crop
                   )
 
-    return "{0}/oulib_tasks/{1}".format(hostname, task_id)
+    return "{0}/oulib_tasks/{1}".format(base_url, task_id)
 
 
 
@@ -123,21 +134,49 @@ def automate():
     result.delay()
     return "automate kicked off"
 
-def get_mmsid(path_to_bag):
+def get_mmsid(path_to_bag,bagName):
     #s3_bucket='ul-bagit'
     #s3 = boto3.resource('s3')
     #s3_key = "{0}/{1}/{2}".format('source', bag, 'bag-info.txt')
     #recipe_obj = s3.Object(s3_bucket, s3_key)
+
+    mmsid = re.findall("(?<!^)(?<!\d)\d{8,19}(?!\d)", bagName)
+    if mmsid:
+        return mmsid[-1]
     fh =open(path_to_bag+"bag-info.txt")
     bag_info = yaml.load(fh)
     try:
         mmsid = bag_info['FIELD_EXTERNAL_DESCRIPTION'].split()[-1].strip()
     except KeyError:
-        logging.error("Cannot determine mmsid for bag: {0}".format(bag))
+        logging.error("Cannot determine mmsid for bag from bag-info: {0}".format(bagName))
         return None
     if re.match("^[0-9]+$", mmsid):  # check that we have an mmsid like value
         return mmsid
     return None
+
+def searchcatalog(bag):
+    resp = requests.get(search_url.format(catalog_url, bag))
+    catalogitems = loads(resp.text)
+    if catalogitems['count']:
+        return catalogitems['results'][0]
+
+
+def updateCatalog(bag,paramstring,mmsid=None):
+    catalogitem = searchcatalog(bag)
+    if catalogitem == None:
+        return False
+    if paramstring not in catalogitem["derivatives"]:
+        catalogitem["derivatives"][paramstring]={}
+    if mmsid == None:
+        if "error" in catalogitem["derivatives"][paramstring].keys():
+            catalogitem["derivatives"][paramstring]["error"].append("mmsid not found")
+        else:
+            catalogitem["derivatives"][paramstring].update({"error":["mmsid not found"]})
+    token = open(cctokenfile).read().strip()
+    headers = {"Content-Type": "application/json", "Authorization": "Token {0}".format(token)}
+    req = requests.post(catalog_url, data=dumps(catalogitem), headers=headers)
+    req.raise_for_status()
+    return True
 
 
 @task
@@ -157,21 +196,24 @@ def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivati
         formatparams = _params_as_string(outformat,filter,scale,crop)
 
         path_to_bag = "/mnt/{0}/{1}/".format(s3_source,bag)
-        mmsid =get_mmsid(path_to_bag)
-        bags_with_mmsids[bag]=OrderedDict()
-        bags_with_mmsids[bag]['mmsid']=mmsid
-        path_to_tif_files_of_bag = "/mnt/{0}/{1}/data/*.tif".format(s3_source,bag)
-        outdir = "/mnt/{0}/{1}/data/{2}".format(s3_destination,bag,formatparams)
-        #print(os.getuid(), os.getgid())
-        #print(check_output(['ls','-l','/mnt/']))
-        if "data" not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
-            os.makedirs(outdir)
-        #print(glob.glob(path))
+        mmsid =get_mmsid(path_to_bag,bag)
+        if mmsid:
+            bags_with_mmsids[bag]=OrderedDict()
+            bags_with_mmsids[bag]['mmsid']=mmsid
+            path_to_tif_files_of_bag = "/mnt/{0}/{1}/data/*.tif".format(s3_source,bag)
+            outdir = "/mnt/{0}/{1}/data/{2}".format(s3_destination,bag,formatparams)
+            #print(os.getuid(), os.getgid())
+            #print(check_output(['ls','-l','/mnt/']))
+            if "data" not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
+                os.makedirs(outdir)
+            #print(glob.glob(path))
 
-        for file in glob.glob(path_to_tif_files_of_bag):
-            outpath = '/mnt/{0}/{1}/data/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
-            processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat))
-    return {"local_derivatives": "{0}/oulib_tasks/{1}".format(hostname, task_id), "s3_destination": s3_destination,
+            for file in glob.glob(path_to_tif_files_of_bag):
+                outpath = '/mnt/{0}/{1}/data/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
+                processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat))
+        else:
+            updateCatalog(bag,formatparams,mmsid)
+    return {"local_derivatives": "{0}/oulib_tasks/{1}".format(base_url, task_id), "s3_destination": s3_destination,
             "task_id": task_id,"bags":bags_with_mmsids,"format_params":formatparams}
 
 """
@@ -188,8 +230,17 @@ def generate_recipe(derivative_args):
     task_id= derivative_args.get('task_id')
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     formatparams = derivative_args.get('format_params')
+    
 
 """
+@task
+def insert_data_into_mongoDB():
+    response = requests.get(
+        'https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true},"derivatives.jpeg_040_antialias.recipe":{"$exists":false}}}&format=json&page_size=0')
+    jobj = response.json()
+    results = jobj.get('results')
+    db_client = app.backend.database.client
+    print(db_client.list_database_names())
 
 
 

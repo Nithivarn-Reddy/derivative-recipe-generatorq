@@ -236,7 +236,7 @@ def generate_recipe(derivative_args):
 @task
 def insert_data_into_mongoDB():
     response = requests.get(
-        'https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/.json')
+        'https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?page_size=0&format=json')
     jobj = response.json()
     results = jobj.get('results')
     db_client = app.backend.database.client

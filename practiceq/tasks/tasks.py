@@ -240,7 +240,16 @@ def insert_data_into_mongoDB():
     jobj = response.json()
     results = jobj.get('results')
     db_client = app.backend.database.client
-    print(db_client.list_database_names())
+    print(db_client.database_names())
+    database = db_client["cybercom"]
 
+    if not "catalog" in db_client.cybercom.collection_names():
+        mycol = database["catalog"]
+        for data in results:
+            mycol.insert_one(data)
+        return "successful"
+    return "already exists"
+   # mydict = {"name": "hello", "address": "Norman"}
+    #x = mycol.insert_one(mydict)
 
 

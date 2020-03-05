@@ -253,6 +253,7 @@ def generate_recipe(derivative_args):
     task_id= derivative_args.get('task_id')
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     formatparams = derivative_args.get('format_params')
+    bags=["Abbati_1703"]
     for bag in bags:
         bag_derivative(bag)
         test()

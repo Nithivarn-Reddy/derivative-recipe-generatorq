@@ -155,10 +155,13 @@ def get_mmsid(path_to_bag,bagName):
     return None
 
 def searchcatalog(bag):
-    resp = requests.get(search_url.format(catalog_url, bag))
-    catalogitems = loads(resp.text)
-    if catalogitems['count']:
-        return catalogitems['results'][0]
+    #resp = requests.get(search_url.format(catalog_url, bag))
+    db_client = app.backend.database.client
+    collection = db_client.cybercom.catalog
+    query = {"bag":bag}
+    catalogCursor = collection.find(query)
+    if catalogCursor.count():
+        return catalogCursor.__getitem__(0)
 
 
 def updateCatalog(bag,paramstring,mmsid=None):
@@ -172,10 +175,10 @@ def updateCatalog(bag,paramstring,mmsid=None):
             catalogitem["derivatives"][paramstring]["error"].append("mmsid not found")
         else:
             catalogitem["derivatives"][paramstring].update({"error":["mmsid not found"]})
-    token = open(cctokenfile).read().strip()
-    headers = {"Content-Type": "application/json", "Authorization": "Token {0}".format(token)}
-    req = requests.post(catalog_url, data=dumps(catalogitem), headers=headers)
-    req.raise_for_status()
+    #token = open(cctokenfile).read().strip()
+    #headers = {"Content-Type": "application/json", "Authorization": "Token {0}".format(token)}
+    #req = requests.post(catalog_url, data=dumps(catalogitem), headers=headers)
+    #req.raise_for_status()
     return True
 
 

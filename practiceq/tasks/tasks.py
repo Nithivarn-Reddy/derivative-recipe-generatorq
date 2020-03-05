@@ -12,11 +12,13 @@ import yaml
 import logging
 import re
 from collections import OrderedDict
+import bagit
 from json import loads,dumps
 from celery import Celery
 import celeryconfig
 app = Celery()
 app.config_from_object(celeryconfig)
+
 
 
 #basedir = "/data/web_data/static"
@@ -219,23 +221,45 @@ def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivati
     return {"local_derivatives": "{0}/oulib_tasks/{1}".format(base_url, task_id), "s3_destination": s3_destination,
             "task_id": task_id,"bags":bags_with_mmsids,"format_params":formatparams}
 
-"""
+def bag_derivative(bagName,update_manifest=True):
+    path = "/mnt/{0}/{1}".format("derivative",bagName)
+    try:
+        bag=bagit.Bag(path)
+    except bagit.BagError:
+        bag = bagit.make_bag(path)
+
+    bag.info['External-Description'] = bagName
+    bag.info['External-Identifier'] = 'University of Oklahoma Libraries'
+
+    try:
+        bag.save(manifests=update_manifest)
+    except IOError as err:
+        logging.error(err)
+
+def test():
+    return "test output"
+
+
 @task
 def generate_recipe(derivative_args):
-"""
-"""
-    This function generates the recipe file and returns the json structure for each bag.
 
-    params:
-    derivative_args:The arguments returned by readSource_updateDerivative function.
-"""
-"""
+    """
+        This function generates the recipe file and returns the json structure for each bag.
+
+        params:
+        derivative_args:The arguments returned by readSource_updateDerivative function.
+    """
+
     task_id= derivative_args.get('task_id')
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     formatparams = derivative_args.get('format_params')
+    for bag in bags:
+        bag_derivative(bag)
+        test()
+        return "derivative bag info generated"
     
 
-"""
+
 @task
 def insert_data_into_mongoDB():
     response = requests.get(

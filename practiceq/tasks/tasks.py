@@ -206,13 +206,9 @@ def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivati
             bags_with_mmsids[bag]=OrderedDict()
             bags_with_mmsids[bag]['mmsid']=mmsid
             path_to_tif_files_of_bag = "/mnt/{0}/{1}/data/*.tif".format(s3_source,bag)
-            outdir = "/mnt/{0}/{1}/data/{2}".format(s3_destination,bag,formatparams)
-            #print(os.getuid(), os.getgid())
-            #print(check_output(['ls','-l','/mnt/']))
-            if "data" not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
+            outdir = "/mnt/{0}/{1}/{2}".format(s3_destination,bag,formatparams)
+            if formatparams not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
                 os.makedirs(outdir)
-            #print(glob.glob(path))
-
             for file in glob.glob(path_to_tif_files_of_bag):
                 outpath = '/mnt/{0}/{1}/data/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat))

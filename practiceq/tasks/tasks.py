@@ -13,13 +13,29 @@ import logging
 import re
 from collections import OrderedDict
 import bagit
+import json
 from json import loads,dumps
 from celery import Celery
 import celeryconfig
+from uuid import uuid5, NAMESPACE_DNS
+import xml.etree.cElementTree as ET
+from operator import is_not
+from functools import partial
+from string import whitespace
+import datetime
+
+
+repoUUID = uuid5(NAMESPACE_DNS, 'repository.ou.edu')
+
+# Assert correct generation
+assert str(repoUUID) == "eb0ecf41-a457-5220-893a-08b7604b7110"
+
+
 app = Celery()
 app.config_from_object(celeryconfig)
 
-
+ou_derivative_bag_url = "https://bag.ou.edu/derivative"
+recipe_url = ou_derivative_bag_url + "/{0}/{1}/{2}.json"
 
 #basedir = "/data/web_data/static"
 #hostname = "https://cc.lib.ou.edu"
@@ -27,8 +43,8 @@ base_url = "https://cc.lib.ou.edu"
 api_url = "{0}/api".format(base_url)
 catalog_url = "{0}/catalog/data/catalog/digital_objects/.json".format(api_url)
 search_url = "{0}?query={{\"filter\": {{\"bag\": \"{1}\"}}}}"
-apikeypath = "/code/alma_api_key"
-cctokenfile = "/code/cybercom_token"
+#apikeypath = "/code/alma_api_key"
+#cctokenfile = "/code/cybercom_token"
 
 
 def _formatextension(imageformat):
@@ -167,16 +183,26 @@ def searchcatalog(bag):
 
 
 def updateCatalog(bag,paramstring,mmsid=None):
+
     catalogitem = searchcatalog(bag)
     if catalogitem == None:
         return False
     if paramstring not in catalogitem["derivatives"]:
         catalogitem["derivatives"][paramstring]={}
+    ####   Check for error.
+
+    path = "/mnt/{0}/{1}/".format("derivative", bag)
+
     if mmsid == None:
-        if "error" in catalogitem["derivatives"][paramstring].keys():
-            catalogitem["derivatives"][paramstring]["error"].append("mmsid not found")
+        if "error" in catalogitem["application"]["islandora"].keys():
+            catalogitem["application"]["islandora"]["error"].append("mmsid not found")
         else:
-            catalogitem["derivatives"][paramstring].update({"error":["mmsid not found"]})
+            catalogitem["application"]["islandora"].update({"error":["mmsid not found"]})
+        return True
+    catalogitem["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag.lower())
+    catalogitem["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
+    catalogitem["derivatives"][paramstring]["pages"] = listpagefiles(bag, paramstring)
+
     #token = open(cctokenfile).read().strip()
     #headers = {"Content-Type": "application/json", "Authorization": "Token {0}".format(token)}
     #req = requests.post(catalog_url, data=dumps(catalogitem), headers=headers)
@@ -217,14 +243,22 @@ def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivati
     return {"local_derivatives": "{0}/oulib_tasks/{1}".format(base_url, task_id), "s3_destination": s3_destination,
             "task_id": task_id,"bags":bags_with_mmsids,"format_params":formatparams}
 
-def bag_derivative(bagName,update_manifest=True):
-    path = "/mnt/{0}/{1}".format("derivative",bagName)
+def bag_derivative(bag_name,update_manifest=True):
+    """
+        This methods create a bag for the derivative folder
+        and updates the bag-info.txt generated
+        args :
+            bagName: str
+            update_manifest : boolean
+    """
+
+    path = "/mnt/{0}/{1}".format("derivative",bag_name)
     try:
         bag=bagit.Bag(path)
     except bagit.BagError:
         bag = bagit.make_bag(path)
 
-    bag.info['External-Description'] = bagName
+    bag.info['External-Description'] = bag_name
     bag.info['External-Identifier'] = 'University of Oklahoma Libraries'
 
     try:
@@ -232,12 +266,145 @@ def bag_derivative(bagName,update_manifest=True):
     except IOError as err:
         logging.error(err)
 
-def test():
-    return "test output"
+def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
+    """
+        This method creates the recipe.json file and updates it into the derivative folder of the bag
+        args:
+            bag_name: str - name of the bag
+            mmsid: dictionary "mmsid":value
+            formatparams :  str eg . jpeg_040_antialias
+    """
+    path = "/mnt/{0}/{1}".format("derivative",bag_name)
+    try:
+        bag = bagit.Bag(path)
+        payload = bag.payload_entries()
+        recipefile = "{0}/{1}.json".format(path,bag_name)
+        recipe=make_recipe(bag_name,mmsid,payload,formatparams,title)
+        logging.debug("Writing recipe to: {0}".format(recipefile))
+        with open(recipefile,"w") as f:
+            f.write(recipe)
+        bag.save()
+    except bagit.BagError:
+        logging.debug("Not a bag: {0}".format(path))
+    except IOError as err:
+        logging.error(err)
+
+def make_recipe(bag_name,mmsid,payload,formatparams,title):
+    """
+        This file returns a dictionary with all the details needed by the recipe
+        args:
+            bag_name = str
+            mmsid = dictionary , "mmsid":value
+            payload = dictionary , directory structure inside the /data of the bag
+            formatparams :  str eg . jpeg_040_antialias
+    """
+    meta = OrderedDict()
+    meta['recipe']= OrderedDict()
+    meta['recipe']['import'] = 'book'
+    meta['recipe']['update'] = 'false'
+    meta['recipe']['uuid'] = str(uuid5(repoUUID,bag_name))
+    meta['recipe']['label'] = title
+
+    bib = get_bib_record(mmsid["mmsid"])
+    path = "/mnt/{0}/{1}".format("derivative", bag_name)
+    if get_marc_xml(mmsid["mmsid"],path,bib):
+        meta['recipe']['metadata']['marcxml'] = "{0}/{1}/{2}/marc.xml".format(ou_derivative_bag_url, bag_name, formatparams)
+    else:
+        meta['recipe']['metadata']['marcxml'] = "{0}/{1}/marc.xml".format(ou_derivative_bag_url, bag_name)
+    if title is None:
+        logging.debug("Getting title from marc file")
+        meta['recipe']['label']= get_title_from_marc(bib)
+    meta['recipe']['pages'] = process_manifest(bag_name, payload, formatparams)
+    logging.debug("Generated JSON:\n{0}".format(dumps(meta, indent=4)))
+    return dumps(meta, indent=4, ensure_ascii=False).encode("UTF-8")
+
+
+def process_manifest(bag_name,payload,formatparams=None):
+    template = """
+    	{"label" : {{ idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[1])}}"}
+    """
+    pages=[]
+    for idx, file in enumerate(payload.items()):
+        page_str = template.render(ou_derivative_bag_url=ou_derivative_bag_url, bagname=bag_name, idx=idx,
+                                   formatparams=formatparams, file=file)
+        # print(page)
+        page = json.loads(page_str)
+        page['uuid'] = str(uuid5(repoUUID, "{0}/{1}".format(bag_name, file[0])))
+        pages.append[page]
+    return pages
+
+def get_marc_datafield(tag_id, xml_tree):
+    try:
+        return xml_tree.xpath("record/datafield[@tag={0}]".format(tag_id))[0]
+    except IndexError:
+        return None
+
+def get_marc_subfield_text(tag_id, sub_code, xml_tree):
+    try:
+        return xml_tree.xpath("record/datafield[@tag={0}]/subfield[@code='{1}']".format(tag_id, sub_code))[0].text
+    except IndexError:
+        return None
+
+def get_title_from_marc(xml):
+    tag_preferences = OrderedDict([
+        # tag id, [ subfield codes ]
+        (130, ['a']),
+        (240, ['a']),
+        (245, ['a', 'b'])
+    ])
+    xml_tree = ET.XML(xml)
+    for tag in tag_preferences.keys():
+        if get_marc_datafield(tag, xml_tree) is not None:
+            title_parts = [get_marc_subfield_text(tag, code, xml_tree) for code in tag_preferences[tag]]
+            title_parts = list(filter(partial(is_not, None), title_parts))  # remove None values
+            if len(title_parts) > 1:
+                title = " ".join(title_parts)
+            else:
+                title = title_parts[0]
+            return title.strip(whitespace + "/,")
+
+def get_marc_xml(mmsid,path,bib):
+
+    if bib is None:
+        return False
+    record = ET.fromstring(bib).find("record")
+    record.attrib['xmlns'] = "http://www.loc.gov/MARC21/slim"
+    if record.find(".//*[@tag='001']") is None and mmsid is not None:
+        controlfield = ET.Element("controlfield",tag="001")
+        controlfield.text=mmsid
+        record.insert(1,controlfield)
+    marc21 = ET.ElementTree(record)
+    try:
+        marc21.write(path+"/marc.xml", encoding='utf-8', xml_declaration=True)
+        return True
+    except IOError as err:
+        logging.error(err)
+        return False
+
+def get_bib_record(mmsid):
+    """
+        Queries the ALMA with MMS ID to obtain corresponding MARC XML
+    """
+    url = "https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/{0}?expand=None&apikey={1}"
+
+    apikey = os.environ.get('ALMA_KEY')
+    if not apikey:
+        logging.error("Could not get Alma key")
+    if apikey and mmsid:
+        try:
+            response = requests.get(url.format(mmsid,apikey))
+            if response.status_code == requests.codes.ok:
+                return response.content
+            else:
+                logging.error(response.content)
+                return {"error":"Alma server returned code: {0}".format(response.status_code)}
+        except requests.ConnectionError as error:
+            logging.error("Alma Connection Error")
+            return {"error":"Alma connection error - Try Again Later"}
 
 
 @task
-def generate_recipe(derivative_args):
+def process_recipe(derivative_args):
 
     """
         This function generates the recipe file and returns the json structure for each bag.
@@ -249,18 +416,18 @@ def generate_recipe(derivative_args):
     task_id= derivative_args.get('task_id')
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     formatparams = derivative_args.get('format_params')
-    bags=["Abbati_1703"]
-    for bag in bags:
-        bag_derivative(bag)
-        test()
+    #bags=["Abbati_1703"]
+    for bag_name,mmsid in bags.items():
+        bag_derivative(bag_name)
+        recipe_file_creation(bag_name,mmsid,formatparams)
+        updateCatalog(bag_name,formatparams,mmsid["mmsid"])
         return "derivative bag info generated"
     
 
-
+"""
 @task
 def insert_data_into_mongoDB():
-    response = requests.get(
-        'https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?page_size=0&format=json')
+    response = requests.get()
     jobj = response.json()
     results = jobj.get('results')
     db_client = app.backend.database.client
@@ -276,4 +443,4 @@ def insert_data_into_mongoDB():
    # mydict = {"name": "hello", "address": "Norman"}
     #x = mycol.insert_one(mydict)
 
-
+"""

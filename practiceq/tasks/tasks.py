@@ -17,6 +17,7 @@ import json
 from json import loads,dumps
 from celery import Celery
 import celeryconfig
+from bson.objectid import ObjectId
 from uuid import uuid5, NAMESPACE_DNS
 import xml.etree.cElementTree as ET
 from operator import is_not
@@ -192,16 +193,18 @@ def updateCatalog(bag,paramstring,mmsid=None):
     ####   Check for error.
 
     path = "/mnt/{0}/{1}/".format("derivative", bag)
-
+    db_client = app.backend.database.client
+    collection = db_client.cybercom.catalog
     if mmsid == None:
         if "error" in catalogitem["application"]["islandora"].keys():
             catalogitem["application"]["islandora"]["error"].append("mmsid not found")
+            #collection.update_one(,catalogitem)
         else:
             catalogitem["application"]["islandora"].update({"error":["mmsid not found"]})
         return True
     catalogitem["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag.lower())
     catalogitem["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
-    catalogitem["derivatives"][paramstring]["pages"] = listpagefiles(bag, paramstring)
+    #catalogitem["derivatives"][paramstring]["pages"] = listpagefiles(bag, paramstring)
 
     #token = open(cctokenfile).read().strip()
     #headers = {"Content-Type": "application/json", "Authorization": "Token {0}".format(token)}
@@ -364,7 +367,6 @@ def get_title_from_marc(xml):
             return title.strip(whitespace + "/,")
 
 def get_marc_xml(mmsid,path,bib):
-
     if bib is None:
         return False
     record = ET.fromstring(bib).find("record")
@@ -413,14 +415,15 @@ def process_recipe(derivative_args):
         derivative_args:The arguments returned by readSource_updateDerivative function.
     """
 
-    task_id= derivative_args.get('task_id')
-    bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
-    formatparams = derivative_args.get('format_params')
-    #bags=["Abbati_1703"]
+    #task_id= derivative_args.get('task_id')
+    #bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
+    #formatparams = derivative_args.get('format_params')
+    formatparams="jpeg_040_antalias"
+    bags=[{"Abbati_1703":{"mmsid":9932140502042}}]
     for bag_name,mmsid in bags.items():
         bag_derivative(bag_name)
         recipe_file_creation(bag_name,mmsid,formatparams)
-        updateCatalog(bag_name,formatparams,mmsid["mmsid"])
+        #updateCatalog(bag_name,formatparams,mmsid["mmsid"])
         return "derivative bag info generated"
     
 

@@ -419,7 +419,7 @@ def process_recipe(derivative_args):
     #bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     #formatparams = derivative_args.get('format_params')
     formatparams="jpeg_040_antalias"
-    bags=[{"Abbati_1703":{"mmsid":9932140502042}}]
+    bags={"Abbati_1703":{"mmsid":9932140502042}}
     for bag_name,mmsid in bags.items():
         bag_derivative(bag_name)
         recipe_file_creation(bag_name,mmsid,formatparams)

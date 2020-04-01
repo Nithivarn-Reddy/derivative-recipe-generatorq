@@ -339,7 +339,7 @@ def process_manifest(bag_name,payload,formatparams=None):
         # print(page)
         page = json.loads(page_str)
         page['uuid'] = str(uuid5(repoUUID, "{0}/{1}".format(bag_name, file[0])))
-        pages.append[page]
+        pages.append(page)
     return pages
 
 def get_marc_datafield(tag_id, xml_tree):

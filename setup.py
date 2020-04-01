@@ -12,5 +12,6 @@ setup(name='practiceq',
 	  'pillow==7.0.0',
           'boto3~=1.6',
 	  'lxml',
+	  'jinja2',
       ],
 )

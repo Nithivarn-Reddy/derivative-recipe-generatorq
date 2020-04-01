@@ -310,6 +310,7 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
 
     bib = get_bib_record(mmsid["mmsid"])
     path = "/mnt/{0}/{1}".format("derivative", bag_name)
+    meta['recipe']['metadata']=OrderedDict();
     if get_marc_xml(mmsid["mmsid"],path,bib):
         meta['recipe']['metadata']['marcxml'] = "{0}/{1}/{2}/marc.xml".format(ou_derivative_bag_url, bag_name, formatparams)
     else:

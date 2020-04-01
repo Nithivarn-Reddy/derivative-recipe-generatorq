@@ -288,7 +288,7 @@ def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
         recipe=make_recipe(bag_name,mmsid,payload,formatparams,title)
         logging.debug("Writing recipe to: {0}".format(recipefile))
         with open(recipefile,"w") as f:
-            f.write(recipe)
+            f.write(recipe.decode("UTF-8"))
         bag.save()
     except bagit.BagError:
         logging.debug("Not a bag: {0}".format(path))

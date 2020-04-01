@@ -25,6 +25,8 @@ from operator import is_not
 from functools import partial
 from string import whitespace
 import datetime
+import jinja2
+from inspect import cleandoc
 
 
 repoUUID = uuid5(NAMESPACE_DNS, 'repository.ou.edu')
@@ -329,8 +331,10 @@ def process_manifest(bag_name,payload,formatparams=None):
     	{"label" : {{ idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[1])}}"}
     """
     pages=[]
+    env = jinja2.Environment()
+    tmplt = env.from_string(cleandoc(template))
     for idx, file in enumerate(payload.items()):
-        page_str = template.render(ou_derivative_bag_url=ou_derivative_bag_url, bagname=bag_name, idx=idx,
+        page_str = tmplt.render(ou_derivative_bag_url=ou_derivative_bag_url, bagname=bag_name, idx=idx,
                                    formatparams=formatparams, file=file)
         # print(page)
         page = json.loads(page_str)

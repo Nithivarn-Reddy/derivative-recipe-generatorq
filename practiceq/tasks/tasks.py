@@ -19,7 +19,8 @@ from celery import Celery
 import celeryconfig
 from bson.objectid import ObjectId
 from uuid import uuid5, NAMESPACE_DNS
-import xml.etree.cElementTree as ET
+from lxml import etree as ET
+#import xml.etree.cElementTree as ET
 from operator import is_not
 from functools import partial
 from string import whitespace

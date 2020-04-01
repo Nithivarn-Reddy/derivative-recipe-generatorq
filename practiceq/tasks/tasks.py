@@ -20,7 +20,6 @@ import celeryconfig
 from bson.objectid import ObjectId
 from uuid import uuid5, NAMESPACE_DNS
 from lxml import etree as ET
-#import xml.etree.cElementTree as ET
 from operator import is_not
 from functools import partial
 from string import whitespace
@@ -328,7 +327,7 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
 
 def process_manifest(bag_name,payload,formatparams=None):
     template = """
-    	{"label" : {{ idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[1])}}"}
+    	{"label" : {{ Image idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[2])}}"}
     """
     pages=[]
     env = jinja2.Environment()

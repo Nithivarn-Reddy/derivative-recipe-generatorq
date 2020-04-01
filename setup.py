@@ -11,5 +11,6 @@ setup(name='practiceq',
           'pyyaml>=4.2b1',
 	  'pillow==7.0.0',
           'boto3~=1.6',
+	  'lxml',
       ],
 )

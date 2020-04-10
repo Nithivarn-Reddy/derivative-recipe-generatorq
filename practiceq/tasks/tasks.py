@@ -252,7 +252,7 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
             if formatparams not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
                 os.makedirs(outdir)
             for file in glob.glob(path_to_tif_files_of_bag):
-                outpath = '/mnt/{0}/{1}/data/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
+                outpath = '/mnt/{0}/{1}/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat))
         else:
             update_catalog(bag,formatparams,mmsid)

@@ -177,7 +177,7 @@ def process_recipe(derivative_args):
     #task_id= derivative_args.get('task_id')
     #bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     #formatparams = derivative_args.get('format_params')
-    formatparams="jpeg_040_antalias"
+    formatparams="jpeg_040_antialias"
     bags={"Abbati_1703":{"mmsid":9932140502042}}
     for bag_name,mmsid in bags.items():
         bag_derivative(bag_name,formatparams)

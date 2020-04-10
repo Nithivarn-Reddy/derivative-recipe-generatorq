@@ -10,7 +10,7 @@ from uuid import uuid5, NAMESPACE_DNS
 repoUUID = uuid5(NAMESPACE_DNS, 'repository.ou.edu')
 
 ou_derivative_bag_url = "https://bag.ou.edu/derivative"
-
+pages=[]
 def bag_derivative(bag_name,formatparams,update_manifest=True):
     """
         This methods create a bag for the derivative folder
@@ -104,4 +104,8 @@ def process_manifest(bag_name,payload,formatparams=None):
         page = json.loads(page_str)
         page['uuid'] = str(uuid5(repoUUID, "{0}/{1}".format(bag_name, file[0])))
         pages.append(page)
+    return pages
+
+def pages_list():
+    global pages
     return pages

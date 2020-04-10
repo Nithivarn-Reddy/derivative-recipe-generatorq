@@ -33,7 +33,7 @@ catalog_url = "{0}/catalog/data/catalog/digital_objects/.json".format(api_url)
 search_url = "{0}?query={{\"filter\": {{\"bag\": \"{1}\"}}}}"
 #apikeypath = "/code/alma_api_key"
 #cctokenfile = "/code/cybercom_token"
-pages=[]
+
 
 
 
@@ -69,7 +69,6 @@ def automate():
     result = chain(getSample.s(),read_source_update_derivative.s())
     result.delay()
     return "automate kicked off"
-
 
 
 def update_catalog(bag,paramstring,mmsid=None):
@@ -109,7 +108,7 @@ def update_catalog(bag,paramstring,mmsid=None):
 
     document["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag.lower())
     document["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
-    document["derivatives"][paramstring]["pages"] = [page['file'] for page in pages]
+    document["derivatives"][paramstring]["pages"] = pages_list()
     update_derivative_values = {
         "$set":
             {

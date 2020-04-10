@@ -48,7 +48,7 @@ catalog_url = "{0}/catalog/data/catalog/digital_objects/.json".format(api_url)
 search_url = "{0}?query={{\"filter\": {{\"bag\": \"{1}\"}}}}"
 #apikeypath = "/code/alma_api_key"
 #cctokenfile = "/code/cybercom_token"
-
+pages=[]
 
 def _formatextension(imageformat):
     """ get common file extension of image format """
@@ -133,7 +133,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
 bagList=[]
 
 def getAllBags():
-    response = requests.get('https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true},"derivatives.jpeg_040_antialias.recipe":{"$exists":false}}}&format=json&page_size=0')
+    response = requests.get('https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true},"derivatives.jpeg_040_antialias.recipe":{"$exists":false,"$error":ne}}}&format=json&page_size=0')
     jobj = response.json()
     results=jobj.get('results')
     for obj in results:
@@ -151,7 +151,7 @@ def automate():
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
-    result = chain(getSample.s(),readSource_updateDerivative.s())
+    result = chain(getSample.s(),read_source_update_derivative.s())
     result.delay()
     return "automate kicked off"
 
@@ -175,48 +175,59 @@ def get_mmsid(path_to_bag,bagName):
         return mmsid
     return None
 
-def searchcatalog(bag):
-    #resp = requests.get(search_url.format(catalog_url, bag))
+def update_catalog(bag,paramstring,mmsid=None):
+
+
     db_client = app.backend.database.client
     collection = db_client.cybercom.catalog
-    query = {"bag":bag}
-    catalogCursor = collection.find(query)
-    if catalogCursor.count():
-        return catalogCursor.__getitem__(0)
-
-
-def updateCatalog(bag,paramstring,mmsid=None):
-
-    catalogitem = searchcatalog(bag)
-    if catalogitem == None:
+    query = {"bag": bag}
+    document = collection.find_one(query)
+    if document == None:
         return False
-    if paramstring not in catalogitem["derivatives"]:
-        catalogitem["derivatives"][paramstring]={}
-    ####   Check for error.
+    document_id = document['_id']
+    myquery = {"_id":document_id}
 
-    path = "/mnt/{0}/{1}/".format("derivative", bag)
-    db_client = app.backend.database.client
-    collection = db_client.cybercom.catalog
     if mmsid == None:
-        if "error" in catalogitem["application"]["islandora"].keys():
-            catalogitem["application"]["islandora"]["error"].append("mmsid not found")
-            #collection.update_one(,catalogitem)
+        if "error" in document["application"]["islandora"].keys():
+            document["application"]["islandora"]["error"].append("mmsid not found")
         else:
-            catalogitem["application"]["islandora"].update({"error":["mmsid not found"]})
-        return True
-    catalogitem["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag.lower())
-    catalogitem["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
-    #catalogitem["derivatives"][paramstring]["pages"] = listpagefiles(bag, paramstring)
+            document["application"]["islandora"].update({"error": ["mmsid not found"]})
+        update_mmsid_error = {
+            "$set":
+                {
+                    "application":
+                        {
+                            "islandora": document["application"]["islandora"]
+                        }
+                }
+        }
+        status = collection.update_one(myquery,update_mmsid_error)
+        return status.raw_result['nModified'] != 0
+    if paramstring not in document["derivatives"]:
+        document["derivatives"][paramstring]={}
 
-    #token = open(cctokenfile).read().strip()
-    #headers = {"Content-Type": "application/json", "Authorization": "Token {0}".format(token)}
-    #req = requests.post(catalog_url, data=dumps(catalogitem), headers=headers)
-    #req.raise_for_status()
-    return True
+
+    #path = "/mnt/{0}/{1}/".format("derivative", bag)
+
+
+    document["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag.lower())
+    document["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
+    document["derivatives"][paramstring]["pages"] = [page['file'] for page in pages]
+    update_derivative_values = {
+        "$set":
+            {
+                "derivatives":
+                    {
+                        paramstring: document["derivatives"][paramstring]
+                    }
+            }
+    }
+    general_update_status = collection.update_one(myquery,update_derivative_values)
+    return general_update_status['nModified'] !=0
 
 
 @task
-def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTALIAS',scale=None, crop=None):
+def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTIALIAS',scale=None, crop=None):
     """
     bagname = List containing bagnames eg : [bag1,bag2...]
     source = source file.
@@ -228,7 +239,7 @@ def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivati
     """
     bags_with_mmsids = OrderedDict()
     for bag in bags:
-        task_id = str(readSource_updateDerivative.request.id)
+        task_id = str(read_source_update_derivative.request.id)
         formatparams = _params_as_string(outformat,filter,scale,crop)
 
         path_to_bag = "/mnt/{0}/{1}/".format(s3_source,bag)
@@ -244,11 +255,11 @@ def readSource_updateDerivative(bags,s3_source="source",s3_destination="derivati
                 outpath = '/mnt/{0}/{1}/data/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat))
         else:
-            updateCatalog(bag,formatparams,mmsid)
+            update_catalog(bag,formatparams,mmsid)
     return {"local_derivatives": "{0}/oulib_tasks/{1}".format(base_url, task_id), "s3_destination": s3_destination,
             "task_id": task_id,"bags":bags_with_mmsids,"format_params":formatparams}
 
-def bag_derivative(bag_name,update_manifest=True):
+def bag_derivative(bag_name,formatparams,update_manifest=True):
     """
         This methods create a bag for the derivative folder
         and updates the bag-info.txt generated
@@ -257,7 +268,7 @@ def bag_derivative(bag_name,update_manifest=True):
             update_manifest : boolean
     """
 
-    path = "/mnt/{0}/{1}".format("derivative",bag_name)
+    path = "/mnt/{0}/{1}/{2}".format("derivative",bag_name,formatparams)
     try:
         bag=bagit.Bag(path)
     except bagit.BagError:
@@ -279,7 +290,7 @@ def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
             mmsid: dictionary "mmsid":value
             formatparams :  str eg . jpeg_040_antialias
     """
-    path = "/mnt/{0}/{1}".format("derivative",bag_name)
+    path = "/mnt/{0}/{1}/{2}".format("derivative",bag_name,formatparams)
     try:
         bag = bagit.Bag(path)
         payload = bag.payload_entries()
@@ -311,7 +322,7 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
     meta['recipe']['label'] = title
 
     bib = get_bib_record(mmsid["mmsid"])
-    path = "/mnt/{0}/{1}".format("derivative", bag_name)
+    path = "/mnt/{0}/{1}/{2}".format("derivative", bag_name,formatparams)
     meta['recipe']['metadata']=OrderedDict();
     if get_marc_xml(mmsid["mmsid"],path,bib):
         meta['recipe']['metadata']['marcxml'] = "{0}/{1}/{2}/marc.xml".format(ou_derivative_bag_url, bag_name, formatparams)
@@ -327,9 +338,10 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
 
 def process_manifest(bag_name,payload,formatparams=None):
     template = """
-    	{"label" : {{ idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[2])}}"}
+    	{"label" : {{ idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[1])}}"}
     """
-    pages=[]
+    # Need to test it with celery workers
+    global pages
     env = jinja2.Environment()
     tmplt = env.from_string(cleandoc(template))
     for idx, file in enumerate(payload.items()):
@@ -426,9 +438,9 @@ def process_recipe(derivative_args):
     formatparams="jpeg_040_antalias"
     bags={"Abbati_1703":{"mmsid":9932140502042}}
     for bag_name,mmsid in bags.items():
-        bag_derivative(bag_name)
+        bag_derivative(bag_name,formatparams)
         recipe_file_creation(bag_name,mmsid,formatparams)
-        #updateCatalog(bag_name,formatparams,mmsid["mmsid"])
+        update_catalog(bag_name,formatparams,mmsid["mmsid"])
         return "derivative bag info generated"
     
 

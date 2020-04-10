@@ -63,7 +63,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
       crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
     """
 
-    task_id = str(processimage.request.id)
+    #task_id = str(processimage.request.id)
     #create Result Directory
     #resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
     #os.makedirs(resultpath)
@@ -75,5 +75,3 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
                   scale=scale,
                   crop=crop
                   )
-
-    return "{0}/oulib_tasks/{1}".format(base_url, task_id)

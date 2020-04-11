@@ -119,7 +119,7 @@ def update_catalog(bag,paramstring,mmsid=None):
             }
     }
     general_update_status = collection.update_one(myquery,update_derivative_values)
-    return general_update_status['nModified'] !=0
+    return general_update_status.raw_result['nModified'] !=0
 
 
 @task

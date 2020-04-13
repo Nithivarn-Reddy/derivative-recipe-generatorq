@@ -52,7 +52,7 @@ def automate(outformat,filter,scale,crop):
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
-    result = chain(getSample.s(),read_source_update_derivative.s(outformat,filter,scale,crop))
+    result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale,crop))
     result.delay()
     return "automate kicked off"
 

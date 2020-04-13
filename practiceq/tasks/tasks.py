@@ -24,26 +24,11 @@ app.config_from_object(celeryconfig)
 
 ou_derivative_bag_url = "https://bag.ou.edu/derivative"
 recipe_url = ou_derivative_bag_url + "/{0}/{1}/{2}.json"
-
-#basedir = "/data/web_data/static"
-#hostname = "https://cc.lib.ou.edu"
 base_url = "https://cc.lib.ou.edu"
 api_url = "{0}/api".format(base_url)
-catalog_url = "{0}/catalog/data/catalog/digital_objects/.json".format(api_url)
 search_url = "{0}?query={{\"filter\": {{\"bag\": \"{1}\"}}}}"
 #apikeypath = "/code/alma_api_key"
 #cctokenfile = "/code/cybercom_token"
-
-
-
-
-
-
-
-
-
-
-
 
 bagList=[]
 
@@ -57,7 +42,8 @@ def getAllBags():
 @task
 def getSample():
     try:
-        return list(random.sample(list(getAllBags()), 4))
+        #list(random.sample(list(getAllBags()), 4))
+        return ['Apian_1545','Abbati_1703']
     except:
         return getAllBags()
 @task
@@ -123,7 +109,7 @@ def update_catalog(bag,paramstring,mmsid=None):
 
 
 @task
-def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTIALIAS',scale=None, crop=None):
+def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None):
     """
     bagname = List containing bagnames eg : [bag1,bag2...]
     source = source file.
@@ -155,14 +141,6 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
     return {"local_derivatives": "{0}/oulib_tasks/{1}".format(base_url, task_id), "s3_destination": s3_destination,
             "task_id": task_id,"bags":bags_with_mmsids,"format_params":formatparams}
 
-
-
-
-
-
-
-
-
 @task
 def process_recipe(derivative_args):
 
@@ -174,10 +152,10 @@ def process_recipe(derivative_args):
     """
 
     #task_id= derivative_args.get('task_id')
-    #bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
-    #formatparams = derivative_args.get('format_params')
-    formatparams="jpeg_040_antialias"
-    bags={"Abbati_1703":{"mmsid":9932140502042}}
+    bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
+    formatparams = derivative_args.get('format_params')
+    #formatparams="jpeg_040_antialias"
+    #bags={"Abbati_1703":{"mmsid":9932140502042}}
     for bag_name,mmsid in bags.items():
         bag_derivative(bag_name,formatparams)
         recipe_file_creation(bag_name,mmsid,formatparams)

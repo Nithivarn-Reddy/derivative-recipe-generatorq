@@ -40,10 +40,10 @@ def getAllBags():
         yield obj.get('bag')
 
 @task
-def getSample():
+def getSample(outformat,filter,scale,crop):
     try:
         #list(random.sample(list(getAllBags()), 4))
-        return ['Apian_1545','Abbati_1703']
+        return ['Apian_1545','Abbati_1703'],outformat,filter,scale,crop
     except:
         return getAllBags()
 @task
@@ -94,7 +94,7 @@ def update_catalog(bag,paramstring,mmsid=None):
 
     document["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag.lower())
     document["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
-    document["derivatives"][paramstring]["pages"] = pages_list()
+    document["derivatives"][paramstring]["pages"] = [page['file'] for page in pages_list()]
     update_derivative_values = {
         "$set":
             {

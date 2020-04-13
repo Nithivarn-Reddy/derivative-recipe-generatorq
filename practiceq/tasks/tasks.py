@@ -47,12 +47,12 @@ def getSample(outformat,filter,scale,crop):
     except:
         return getAllBags()
 @task
-def automate():
+def automate(outformat,filter,scale,crop):
     """
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
-    result = chain(getSample.s(),read_source_update_derivative.s())
+    result = chain(getSample.s(outformat,filter,scale,crop),read_source_update_derivative.s())
     result.delay()
     return "automate kicked off"
 

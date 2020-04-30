@@ -4,7 +4,7 @@ from celery.task import task
 from subprocess import check_call, check_output
 import glob as glob
 from celery import Celery
-import celeryconfig
+#import celeryconfig
 from uuid import uuid5, NAMESPACE_DNS
 import datetime
 from .derivative_utils import _params_as_string,_formatextension,processimage
@@ -20,7 +20,7 @@ assert str(repoUUID) == "eb0ecf41-a457-5220-893a-08b7604b7110"
 
 
 app = Celery()
-app.config_from_object(celeryconfig)
+#app.config_from_object(celeryconfig)
 
 ou_derivative_bag_url = "https://bag.ou.edu/derivative"
 recipe_url = ou_derivative_bag_url + "/{0}/{1}/{2}.json"
@@ -40,18 +40,19 @@ def getAllBags():
         yield obj.get('bag')
 
 @task
-def getSample():
+def getSample(size=4):
     try:
-        #list(random.sample(list(getAllBags()), 4))
+        #list(random.sample(list(getAllBags()), size))
         return ['Apian_1545','Abbati_1703']
     except:
         return getAllBags()
 @task
-def automate(outformat,filter,scale,crop):
+def automate(outformat,filter,scale,crop,bag=None):
     """
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
+    # If bag is given is then kickoff separate chain.
     result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale,crop))
     result.delay()
     return "automate kicked off"
@@ -125,7 +126,7 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
         formatparams = _params_as_string(outformat,filter,scale,crop)
 
         path_to_bag = "/mnt/{0}/{1}/".format(s3_source,bag)
-        mmsid =get_mmsid(path_to_bag,bag)
+        mmsid =get_mmsid(bag,path_to_bag)
         if mmsid:
             bags_with_mmsids[bag]=OrderedDict()
             bags_with_mmsids[bag]['mmsid']=mmsid

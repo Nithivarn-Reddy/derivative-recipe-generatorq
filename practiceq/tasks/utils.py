@@ -10,13 +10,13 @@ from collections import OrderedDict
 import os
 
 
-def get_mmsid(path_to_bag,bagName):
+def get_mmsid(bag_name,path_to_bag=None):
     #s3_bucket='ul-bagit'
     #s3 = boto3.resource('s3')
     #s3_key = "{0}/{1}/{2}".format('source', bag, 'bag-info.txt')
     #recipe_obj = s3.Object(s3_bucket, s3_key)
 
-    mmsid = re.findall("(?<!^)(?<!\d)\d{8,19}(?!\d)", bagName)
+    mmsid = re.findall("(?<!^)(?<!\d)\d{8,19}(?!\d)", bag_name)
     if mmsid:
         return mmsid[-1]
     fh =open(path_to_bag+"bag-info.txt")
@@ -24,7 +24,7 @@ def get_mmsid(path_to_bag,bagName):
     try:
         mmsid = bag_info['FIELD_EXTERNAL_DESCRIPTION'].split()[-1].strip()
     except KeyError:
-        logging.error("Cannot determine mmsid for bag from bag-info: {0}".format(bagName))
+        logging.error("Cannot determine mmsid for bag from bag-info: {0}".format(bag_name))
         return None
     if re.match("^[0-9]+$", mmsid):  # check that we have an mmsid like value
         return mmsid

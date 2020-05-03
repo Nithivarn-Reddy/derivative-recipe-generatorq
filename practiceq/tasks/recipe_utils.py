@@ -20,12 +20,12 @@ def bag_derivative(bag_name,formatparams,update_manifest=True):
             update_manifest : boolean
     """
 
-    path = "/mnt/{0}/{1}/{2}".format("derivative",bag_name,formatparams)
+    path = _get_path(bag_name,formatparams)
     try:
         bag=bagit.Bag(path)
     except bagit.BagError:
         bag = bagit.make_bag(path)
-
+    #print(bag)
     bag.info['External-Description'] = bag_name
     bag.info['External-Identifier'] = 'University of Oklahoma Libraries'
 
@@ -33,6 +33,9 @@ def bag_derivative(bag_name,formatparams,update_manifest=True):
         bag.save(manifests=update_manifest)
     except IOError as err:
         logging.error(err)
+
+def _get_path(bag_name,formatparams):
+    return "/mnt/derivative/{0}/{1}".format(bag_name,formatparams)
 
 def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
     """
@@ -42,7 +45,7 @@ def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
             mmsid: dictionary "mmsid":value
             formatparams :  str eg . jpeg_040_antialias
     """
-    path = "/mnt/{0}/{1}/{2}".format("derivative",bag_name,formatparams)
+    path = _get_path(bag_name,formatparams)
     try:
         bag = bagit.Bag(path)
         payload = bag.payload_entries()
@@ -75,7 +78,7 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
     meta['recipe']['label'] = title
 
     bib = get_bib_record(mmsid["mmsid"])
-    path = "/mnt/{0}/{1}/{2}".format("derivative", bag_name,formatparams)
+    path = _get_path(bag_name,formatparams)
     meta['recipe']['metadata']=OrderedDict();
     if get_marc_xml(mmsid["mmsid"],path,bib):
         meta['recipe']['metadata']['marcxml'] = "{0}/{1}/{2}/marc.xml".format(ou_derivative_bag_url, bag_name, formatparams)

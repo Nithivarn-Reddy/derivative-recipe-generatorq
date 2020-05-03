@@ -136,7 +136,7 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
                 os.makedirs(outdir)
             for file in glob.glob(path_to_tif_files_of_bag):
                 outpath = '/mnt/{0}/{1}/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
-                processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat))
+                processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat),filter=filter,scale=scale,crop=crop)
         else:
             update_catalog(bag,formatparams,mmsid)
     return {"local_derivatives": "{0}/oulib_tasks/{1}".format(base_url, task_id), "s3_destination": s3_destination,

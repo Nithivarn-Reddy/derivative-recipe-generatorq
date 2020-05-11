@@ -4,7 +4,7 @@ from celery.task import task
 from subprocess import check_call, check_output
 import glob as glob
 from celery import Celery
-#import celeryconfig
+import celeryconfig
 from uuid import uuid5, NAMESPACE_DNS
 import datetime
 from .derivative_utils import _params_as_string,_formatextension,processimage
@@ -20,7 +20,7 @@ assert str(repoUUID) == "eb0ecf41-a457-5220-893a-08b7604b7110"
 
 
 app = Celery()
-#app.config_from_object(celeryconfig)
+app.config_from_object(celeryconfig)
 
 ou_derivative_bag_url = "https://bag.ou.edu/derivative"
 recipe_url = ou_derivative_bag_url + "/{0}/{1}/{2}.json"
@@ -59,8 +59,6 @@ def automate(outformat,filter,scale,crop,bag=None):
 
 
 def update_catalog(bag,paramstring,mmsid=None):
-
-
     db_client = app.backend.database.client
     collection = db_client.cybercom.catalog
     query = {"bag": bag}
@@ -144,14 +142,12 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
 
 @task
 def process_recipe(derivative_args):
-
     """
         This function generates the recipe file and returns the json structure for each bag.
 
         params:
         derivative_args:The arguments returned by readSource_updateDerivative function.
     """
-
     #task_id= derivative_args.get('task_id')
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     formatparams = derivative_args.get('format_params')

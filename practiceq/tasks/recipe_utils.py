@@ -10,7 +10,7 @@ from uuid import uuid5, NAMESPACE_DNS
 repoUUID = uuid5(NAMESPACE_DNS, 'repository.ou.edu')
 
 ou_derivative_bag_url = "https://bag.ou.edu/derivative"
-pages=[]
+
 def bag_derivative(bag_name,formatparams,update_manifest=True):
     """
         This methods create a bag for the derivative folder
@@ -91,13 +91,13 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
     logging.debug("Generated JSON:\n{0}".format(dumps(meta, indent=4)))
     return dumps(meta, indent=4, ensure_ascii=False).encode("UTF-8")
 
-
+#Change the pages code in update_catalog()
 def process_manifest(bag_name,payload,formatparams=None):
     template = """
     	{"label" : {{ idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[1])}}"}
     """
     # Need to test it with celery workers
-    global pages
+    pages=[]
     env = jinja2.Environment()
     tmplt = env.from_string(cleandoc(template))
     for idx, file in enumerate(payload.items()):
@@ -108,7 +108,8 @@ def process_manifest(bag_name,payload,formatparams=None):
         page['uuid'] = str(uuid5(repoUUID, "{0}/{1}".format(bag_name, file[0])))
         pages.append(page)
     return pages
-
+"""
 def pages_list():
     global pages
     return pages
+"""

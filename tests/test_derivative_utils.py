@@ -1,9 +1,5 @@
 import os
-from io import StringIO
-from unittest.mock import patch
-
 from PIL import Image
-from click import File
 from nose.tools import assert_equal, assert_true
 import tempfile
 from practiceq.tasks.derivative_utils import _formatextension, _params_as_string, _processimage
@@ -30,6 +26,7 @@ def test_params_as_string():
     assert_equal(value, "jpeg_040_xyz_10_10_10_10")
 
 #@patch("practiceq.tasks.derivative_utils.PIL.Image")
+#16-bitcolor depth tif images.
 def test_processimage():
     with tempfile.TemporaryDirectory() as tmpdir:
         image = Image.new("RGB", size=(100,100), color=(256, 0, 0))
@@ -47,3 +44,13 @@ def test_processimage_1():
         assert_true(os.path.isfile(os.path.join(tmpdir, "test.tif")))
         image = Image.open(tmpdir+"/test.tif")
         assert_true(image.size == (40,40))
+"""
+def test_processimage_2():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        image = Image.new("RGB", size=(100,100), color=(256, 0, 0))
+        image.save(tmpdir+"/test.jpg","jpeg")
+        _processimage(tmpdir+"/test.jpg",tmpdir+"/test.jpg",scale=1.2)
+        assert_true(os.path.isfile(os.path.join(tmpdir, "test.jpg")))
+        image1 = Image.open(tmpdir+"/test.jpg")
+        assert_equal(image1.size, (120,120))
+"""

@@ -4,10 +4,11 @@ from celery.task import task
 from subprocess import check_call, check_output
 import glob as glob
 from celery import Celery
-import celeryconfig
+#import celeryconfig
 from uuid import uuid5, NAMESPACE_DNS
 import datetime
 from .derivative_utils import _params_as_string,_formatextension,processimage
+from .recipe_utils import _get_path
 from .utils import *
 from .recipe_utils import *
 
@@ -20,7 +21,7 @@ assert str(repoUUID) == "eb0ecf41-a457-5220-893a-08b7604b7110"
 
 
 app = Celery()
-app.config_from_object(celeryconfig)
+#app.config_from_object(celeryconfig)
 
 ou_derivative_bag_url = "https://bag.ou.edu/derivative"
 recipe_url = ou_derivative_bag_url + "/{0}/{1}/{2}.json"
@@ -57,6 +58,13 @@ def automate(outformat,filter,scale,crop,bag=None):
     result.delay()
     return "automate kicked off"
 
+#test this method
+def listpagefiles(bag_name, paramstring):
+    filename = "{0}.json".format(bag_name).lower()
+    path=_get_path(bag_name, paramstring)
+    recipe_json = path+"/"+filename
+    recipe = loads(recipe_json)
+    return [page['file'] for page in recipe['recipe']['pages']]
 
 def update_catalog(bag,paramstring,mmsid=None):
     db_client = app.backend.database.client
@@ -84,16 +92,12 @@ def update_catalog(bag,paramstring,mmsid=None):
         }
         status = collection.update_one(myquery,update_mmsid_error)
         return status.raw_result['nModified'] != 0
+        #return status
     if paramstring not in document["derivatives"]:
         document["derivatives"][paramstring]={}
-
-
-    #path = "/mnt/{0}/{1}/".format("derivative", bag)
-
-
     document["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag.lower())
     document["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
-    document["derivatives"][paramstring]["pages"] = [page['file'] for page in pages_list()]
+    document["derivatives"][paramstring]["pages"] = listpagefiles(bag, paramstring)
     update_derivative_values = {
         "$set":
             {
@@ -105,10 +109,10 @@ def update_catalog(bag,paramstring,mmsid=None):
     }
     general_update_status = collection.update_one(myquery,update_derivative_values)
     return general_update_status.raw_result['nModified'] !=0
-
+    #return general_update_status
 
 @task
-def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None):
+def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None,mount_point="mnt"):
     """
     bagname = List containing bagnames eg : [bag1,bag2...]
     source = source file.
@@ -123,17 +127,19 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
         task_id = str(read_source_update_derivative.request.id)
         formatparams = _params_as_string(outformat,filter,scale,crop)
 
-        path_to_bag = "/mnt/{0}/{1}/".format(s3_source,bag)
+        path_to_bag = "/{0}/{1}/{2}/".format(mount_point,s3_source,bag)
         mmsid =get_mmsid(bag,path_to_bag)
         if mmsid:
             bags_with_mmsids[bag]=OrderedDict()
             bags_with_mmsids[bag]['mmsid']=mmsid
-            path_to_tif_files_of_bag = "/mnt/{0}/{1}/data/*.tif".format(s3_source,bag)
-            outdir = "/mnt/{0}/{1}/{2}".format(s3_destination,bag,formatparams)
-            if formatparams not in str(check_output(["ls","-l","/mnt/derivative/{0}/".format(bag)])):
+            path_to_tif_files_of_bag = "/{0}/{1}/{2}/data/*.tif".format(mount_point,s3_source,bag)
+            print(path_to_tif_files_of_bag)
+            outdir = "/{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,formatparams)
+            if formatparams not in str(check_output(["ls","-l","/{0}/derivative/{1}/".format(mount_point,bag)])):
                 os.makedirs(outdir)
             for file in glob.glob(path_to_tif_files_of_bag):
-                outpath = '/mnt/{0}/{1}/{2}/{3}.{4}'.format("derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
+                print(file)
+                outpath = '/{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat),filter=filter,scale=scale,crop=crop)
         else:
             update_catalog(bag,formatparams,mmsid)

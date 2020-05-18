@@ -9,7 +9,7 @@ import tempfile
 
 import jinja2
 from nose.tools import assert_raises, assert_equal, assert_true, assert_false
-from practiceq.tasks.recipe_utils import bag_derivative, recipe_file_creation, make_recipe, process_manifest, pages_list
+from practiceq.tasks.recipe_utils import bag_derivative, recipe_file_creation, make_recipe, process_manifest
 
 
 #@patch("practiceq.tasks.recipe_utils.bagit.make_bag")
@@ -63,6 +63,9 @@ def test_recipe_file_creation(path,recipe):
         recipe.return_value = "Some content".encode("UTF-8")
         recipe_file_creation("Abbati", "999655522", "formatparams")
         assert_true(os.path.isfile(os.path.join(tmpdir, "Abbati.json")))
+        with open(os.path.join(tmpdir, "Abbati.json"),"r") as f:
+            value = f.read()
+        assert_equal(value,"Some content")
 
 @patch("practiceq.tasks.recipe_utils.process_manifest")
 @patch("practiceq.tasks.recipe_utils.get_title_from_marc")
@@ -132,8 +135,8 @@ def test_process_manifest():
         actual_pages = process_manifest("Abbati_1703",payload,"jpeg_040_antalias")
         assert_true(len(actual_pages) == 1)
 
-"""
-ask about this.
+
+#ask about this.
 def test_process_manifest_1():
     expected_pages = [
         {'label': 0,
@@ -150,9 +153,9 @@ def test_process_manifest_1():
         payload = bag.payload_entries()
         actual_pages = process_manifest("Abbati_1703",payload,"jpeg_040_antalias")
         assert_equal(actual_pages,expected_pages)
-"""
 
+"""
 def test_pages_list():
     actual_pages=pages_list()
     assert_true(len(actual_pages) == 1)
-
+"""

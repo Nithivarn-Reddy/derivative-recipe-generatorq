@@ -4,7 +4,7 @@ from celery.task import task
 from subprocess import check_call, check_output
 import glob as glob
 from celery import Celery
-#import celeryconfig
+import celeryconfig
 from uuid import uuid5, NAMESPACE_DNS
 import datetime
 from .derivative_utils import _params_as_string,_formatextension,processimage
@@ -21,15 +21,15 @@ assert str(repoUUID) == "eb0ecf41-a457-5220-893a-08b7604b7110"
 
 
 app = Celery()
-#app.config_from_object(celeryconfig)
+app.config_from_object(celeryconfig)
 
+mount_point="/mnt"
 ou_derivative_bag_url = "https://bag.ou.edu/derivative"
 recipe_url = ou_derivative_bag_url + "/{0}/{1}/{2}.json"
 base_url = "https://cc.lib.ou.edu"
 api_url = "{0}/api".format(base_url)
 search_url = "{0}?query={{\"filter\": {{\"bag\": \"{1}\"}}}}"
-#apikeypath = "/code/alma_api_key"
-#cctokenfile = "/code/cybercom_token"
+
 
 bagList=[]
 
@@ -54,11 +54,11 @@ def automate(outformat,filter,scale,crop,bag=None):
     :return: string "kicked off or not"
     """
     # If bag is given is then kickoff separate chain.
-    result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale,crop))
+    result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale=0.4),process_recipe.s())
     result.delay()
     return "automate kicked off"
 
-#test this method
+#TODO:test this method
 def listpagefiles(bag_name, paramstring):
     filename = "{0}.json".format(bag_name).lower()
     path=_get_path(bag_name, paramstring)
@@ -112,7 +112,7 @@ def update_catalog(bag,paramstring,mmsid=None):
     #return general_update_status
 
 @task
-def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None,mount_point="mnt"):
+def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None):
     """
     bagname = List containing bagnames eg : [bag1,bag2...]
     source = source file.
@@ -127,19 +127,20 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
         task_id = str(read_source_update_derivative.request.id)
         formatparams = _params_as_string(outformat,filter,scale,crop)
 
-        path_to_bag = "/{0}/{1}/{2}/".format(mount_point,s3_source,bag)
+        path_to_bag = "{0}/{1}/{2}/".format(mount_point,s3_source,bag)
         mmsid =get_mmsid(bag,path_to_bag)
         if mmsid:
             bags_with_mmsids[bag]=OrderedDict()
             bags_with_mmsids[bag]['mmsid']=mmsid
-            path_to_tif_files_of_bag = "/{0}/{1}/{2}/data/*.tif".format(mount_point,s3_source,bag)
+            path_to_tif_files_of_bag = "{0}/{1}/{2}/data/*.tif".format(mount_point,s3_source,bag)
             print(path_to_tif_files_of_bag)
-            outdir = "/{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,formatparams)
-            if formatparams not in str(check_output(["ls","-l","/{0}/derivative/{1}/".format(mount_point,bag)])):
+            outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,formatparams)
+            #os.path.exists("{0}/derivative/{1}/".format(mount_point,bag))
+            if formatparams not in str(check_output(["ls","-l","{0}/derivative/{1}/".format(mount_point,bag)])):
                 os.makedirs(outdir)
             for file in glob.glob(path_to_tif_files_of_bag):
                 print(file)
-                outpath = '/{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
+                outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 processimage(inpath=file,outpath=outpath,outformat=_formatextension(outformat),filter=filter,scale=scale,crop=crop)
         else:
             update_catalog(bag,formatparams,mmsid)

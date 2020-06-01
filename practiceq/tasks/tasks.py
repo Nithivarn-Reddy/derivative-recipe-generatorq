@@ -140,8 +140,7 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
             path_to_tif_files_of_bag = "{0}/{1}/{2}/data/*.tif".format(mount_point,s3_source,bag)
             print(path_to_tif_files_of_bag)
             outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,formatparams)
-            #os.path.exists("{0}/derivative/{1}/".format(mount_point,bag))
-            if formatparams not in str(check_output(["ls","-l","{0}/derivative/{1}/".format(mount_point,bag)])):
+            if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)):
                 os.makedirs(outdir)
             for file in glob.glob(path_to_tif_files_of_bag):
                 print(file)

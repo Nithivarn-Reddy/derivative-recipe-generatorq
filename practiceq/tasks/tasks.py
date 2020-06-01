@@ -65,10 +65,11 @@ def automate(outformat,filter,scale,crop,bag=None):
 
 #TODO:test this method
 def listpagefiles(bag_name, paramstring):
-    filename = "{0}.json".format(bag_name).lower()
+    filename = "{0}.json".format(bag_name)
     path=_get_path(bag_name, paramstring)
-    recipe_json = path+"/"+filename
-    recipe = loads(recipe_json)
+    recipe_json = os.path.join(path,filename)
+    with open(recipe_json,"r") as f:
+        recipe =  loads(f.read())
     return [page['file'] for page in recipe['recipe']['pages']]
 
 def update_catalog(bag,paramstring,mmsid=None):

@@ -54,9 +54,14 @@ def automate(outformat,filter,scale,crop,bag=None):
     :return: string "kicked off or not"
     """
     # If bag is given is then kickoff separate chain.
-    result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale=0.4),process_recipe.s())
+    if bag:
+        result = chain(read_source_update_derivative.s(bag,"source","derivative",outformat,filter,scale=0.4),process_recipe.s())
+    else:
+        result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale=0.4),process_recipe.s())
     result.delay()
     return "automate kicked off"
+
+
 
 #TODO:test this method
 def listpagefiles(bag_name, paramstring):
@@ -165,9 +170,7 @@ def process_recipe(derivative_args):
         recipe_file_creation(bag_name,mmsid,formatparams)
         update_catalog(bag_name,formatparams,mmsid["mmsid"])
         return "derivative bag info generated"
-    
 
-"""
 @task
 def insert_data_into_mongoDB():
     response = requests.get()
@@ -186,4 +189,4 @@ def insert_data_into_mongoDB():
    # mydict = {"name": "hello", "address": "Norman"}
     #x = mycol.insert_one(mydict)
 
-"""
+

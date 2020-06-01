@@ -173,7 +173,7 @@ def process_recipe(derivative_args):
 
 @task
 def insert_data_into_mongoDB():
-    response = requests.get('https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true},"derivatives.jpeg_040_antialias.recipe":{"$exists":false,"$error":ne}}}&format=json&page_size=0')
+    response = requests.get('https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true},"derivatives.jpeg_040_antialias.recipe":{"$exists":false}}}&format=json&page_size=0')
     jobj = response.json()
     results = jobj.get('results')
     db_client = app.backend.database.client

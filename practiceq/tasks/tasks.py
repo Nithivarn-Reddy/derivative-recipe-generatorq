@@ -6,6 +6,8 @@ import glob as glob
 from celery import Celery
 import celeryconfig
 from uuid import uuid5, NAMESPACE_DNS
+import shutil
+from shutil import rmtree
 import datetime
 from .derivative_utils import _params_as_string,_formatextension,processimage
 from .recipe_utils import _get_path
@@ -67,10 +69,6 @@ def automate(outformat,filter,scale,crop,bag=None):
     result.delay()
     return "automate kicked off"
 
-
-
-
-#TODO:test this method
 def listpagefiles(bag_name, paramstring):
     filename = "{0}.json".format(bag_name)
     path=_get_path(bag_name, paramstring)
@@ -125,8 +123,11 @@ def update_catalog(bag,paramstring,mmsid=None):
     return general_update_status.raw_result['nModified'] !=0
     #return general_update_status
 
+class derivative_generation_error(Exception):
+    pass
+
 @task
-def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None):
+def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None,force_overwrite=False):
     """
     bagname = List containing bagnames eg : [bag1,bag2...]
     source = source file.
@@ -151,6 +152,12 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
             path_to_tif_files_of_bag = "{0}/{1}/{2}/data/*.tif".format(mount_point,s3_source,bag)
             print(path_to_tif_files_of_bag)
             outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,formatparams)
+
+            #ask regarding this removal.
+            if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)) and force_overwrite:
+                rmtree(outdir)
+            if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)) and not force_overwrite:
+                raise derivative_generation_error("derivative already exists and force_overwrite is set to false")
             if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)):
                 os.makedirs(outdir)
             for file in glob.glob(path_to_tif_files_of_bag):

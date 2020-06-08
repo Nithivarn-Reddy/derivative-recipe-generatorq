@@ -56,6 +56,7 @@ def get_title_from_marc(xml):
             title_parts = list(filter(partial(is_not, None), title_parts))  # remove None values
             if len(title_parts) > 1:
                 title = " ".join(title_parts)
+
             else:
                 title = title_parts[0]
             return title.strip(whitespace + "/,")

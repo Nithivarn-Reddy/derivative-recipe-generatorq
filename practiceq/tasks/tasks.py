@@ -44,7 +44,7 @@ def getAllBags():
 def getSample(size=4):
     try:
         #list(random.sample(list(getAllBags()), size))
-        return ['Apian_1545','Abbati_1703']
+        yield ['Apian_1545','Abbati_1703']
     except:
         return getAllBags()
 @task
@@ -54,12 +54,19 @@ def automate(outformat,filter,scale,crop,bag=None):
     :return: string "kicked off or not"
     """
     # If bag is given is then kickoff separate chain.
+
+    for bag in getSample():
+        result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale=0.4),
+                       process_recipe.s())
+    """
     if bag:
         result = chain(read_source_update_derivative.s(bag,"source","derivative",outformat,filter,scale=0.4),process_recipe.s())
     else:
         result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale=0.4),process_recipe.s())
+    """
     result.delay()
     return "automate kicked off"
+
 
 
 
@@ -129,6 +136,8 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
 
     """
     bags_with_mmsids = OrderedDict()
+    if type(bags) == 'str':
+        bags = [bags]
     for bag in bags:
         task_id = str(read_source_update_derivative.request.id)
         formatparams = _params_as_string(outformat,filter,scale,crop)

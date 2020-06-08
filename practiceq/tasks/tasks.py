@@ -179,7 +179,7 @@ def process_recipe(derivative_args):
         bag_derivative(bag_name,formatparams)
         recipe_file_creation(bag_name,mmsid,formatparams)
         update_catalog(bag_name,formatparams,mmsid["mmsid"])
-        return "derivative bag info generated"
+        return "derivative-recipe file of bag is generated"
 
 @task
 def insert_data_into_mongoDB():

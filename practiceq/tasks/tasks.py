@@ -108,7 +108,8 @@ def update_catalog(bag,paramstring,mmsid=None):
         #return status
     if paramstring not in document["derivatives"]:
         document["derivatives"][paramstring]={}
-    document["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag.lower())
+    #ask whether bag_name needs to be lower.
+    document["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag)
     document["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
     document["derivatives"][paramstring]["pages"] = listpagefiles(bag, paramstring)
     update_derivative_values = {

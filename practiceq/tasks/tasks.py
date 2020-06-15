@@ -58,7 +58,7 @@ def automate(outformat,filter,scale,crop,force_overwrite=False,bag=None):
     # If bag is given is then kickoff separate chain.
 
     for bag in getSample():
-        result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,force_overwrite),
+        result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
                        process_recipe.s())
     """
     if bag:

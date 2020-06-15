@@ -50,7 +50,7 @@ def getSample(size=4):
     except:
         return getAllBags()
 @task
-def automate(outformat,filter,scale,crop,bag=None):
+def automate(outformat,filter,scale,crop,force_overwrite=False,bag=None):
     """
     This automates the process of derivative creation.
     :return: string "kicked off or not"
@@ -58,7 +58,7 @@ def automate(outformat,filter,scale,crop,bag=None):
     # If bag is given is then kickoff separate chain.
 
     for bag in getSample():
-        result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale=0.4),
+        result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,force_overwrite),
                        process_recipe.s())
     """
     if bag:

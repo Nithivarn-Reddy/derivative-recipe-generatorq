@@ -103,7 +103,6 @@ def update_catalog(bag,paramstring,mmsid=None):
         }
         status = collection.update_one(myquery,update_mmsid_error)
         return status.raw_result['nModified'] != 0
-        #return status
     if paramstring not in document["derivatives"]:
         document["derivatives"][paramstring]={}
     #ask whether bag_name needs to be lower.
@@ -121,7 +120,6 @@ def update_catalog(bag,paramstring,mmsid=None):
     }
     general_update_status = collection.update_one(myquery,update_derivative_values)
     return general_update_status.raw_result['nModified'] !=0
-    #return general_update_status
 
 class derivative_generation_error(Exception):
     pass
@@ -135,7 +133,7 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
     filter = "ANTALIAS" - filter type of the image.
     scale = At what scale do you need the reduction of the size - eg 0.40 or o.20
     crop = size in which the image needs to be cropped, Provide it as a list - eg - [10,10,20,40]
-
+    force_overwrite = overwrite the derivative bag already if it was already created with the previous paramaters. -eg: true.
     """
     bags_with_mmsids = OrderedDict()
     if type(bags) == 'str':
@@ -152,8 +150,6 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
             path_to_tif_files_of_bag = "{0}/{1}/{2}/data/*.tif".format(mount_point,s3_source,bag)
             print(path_to_tif_files_of_bag)
             outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,formatparams)
-
-            #ask regarding this removal.
             if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)) and force_overwrite:
                 rmtree(outdir)
             if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)) and not force_overwrite:

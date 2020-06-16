@@ -25,7 +25,6 @@ def bag_derivative(bag_name,formatparams,update_manifest=True):
         bag=bagit.Bag(path)
     except bagit.BagError:
         bag = bagit.make_bag(path)
-    #print(bag)
     bag.info['External-Description'] = bag_name
     bag.info['External-Identifier'] = 'University of Oklahoma Libraries'
 
@@ -92,19 +91,16 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
     logging.debug("Generated JSON:\n{0}".format(dumps(meta, indent=4)))
     return dumps(meta, indent=4, ensure_ascii=False).encode("UTF-8")
 
-#TODO:Change the pages code in update_catalog()
 def process_manifest(bag_name,payload,formatparams=None):
     template = """
     	{"label" : {{ idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[1])}}"}
     """
-    # Need to test it with celery workers
     pages=[]
     env = jinja2.Environment()
     tmplt = env.from_string(cleandoc(template))
     for idx, file in enumerate(payload.items()):
         page_str = tmplt.render(ou_derivative_bag_url=ou_derivative_bag_url, bagname=bag_name, idx=idx,
                                    formatparams=formatparams, file=file)
-        # print(page)
         page = json.loads(page_str)
         page['uuid'] = str(uuid5(repoUUID, "{0}/{1}".format(bag_name, file[0])))
         pages.append(page)

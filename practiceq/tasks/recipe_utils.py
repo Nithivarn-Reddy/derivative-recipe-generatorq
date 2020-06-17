@@ -52,7 +52,7 @@ def process_manifest(bag_name,payload,formatparams=None):
     env = jinja2.Environment()
     tmplt = env.from_string(cleandoc(template))
     for idx, file in enumerate(payload.items()):
-        page_str = tmplt.render(ou_derivative_bag_url=ou_derivative_bag_url, bagname=bag_name, idx=idx,
+        page_str = tmplt.render(ou_derivative_bag_url=ou_derivative_bag_url, bagname=bag_name, idx=idx+1,
                                    formatparams=formatparams, file=file)
         page = json.loads(page_str)
         page['uuid'] = str(uuid5(repoUUID, "{0}/{1}".format(bag_name, file[0])))

@@ -1,7 +1,6 @@
 import random
 from celery import chain
 from celery.task import task
-from subprocess import check_call, check_output
 import glob as glob
 from celery import Celery
 import celeryconfig
@@ -9,7 +8,7 @@ from uuid import uuid5, NAMESPACE_DNS
 import shutil
 from shutil import rmtree
 import datetime
-from .derivative_utils import _params_as_string,_formatextension,processimage
+from .derivative_utils import _params_as_string,_formatextension,_processimage
 from .recipe_utils import _get_path
 from .utils import *
 from .recipe_utils import *
@@ -77,6 +76,7 @@ def listpagefiles(bag_name, paramstring):
         recipe =  loads(f.read())
     return [page['file'] for page in recipe['recipe']['pages']]
 
+@task
 def update_catalog(bag,paramstring,mmsid=None):
     db_client = app.backend.database.client
     collection = db_client.cybercom.catalog
@@ -123,6 +123,35 @@ def update_catalog(bag,paramstring,mmsid=None):
 
 class derivative_generation_error(Exception):
     pass
+
+@task
+def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
+    """
+    Digilab TIFF derivative Task
+
+    args:
+      inpath - path string to input image
+      outpath - path string to output image
+      outformat - string representation of image format - default is "TIFF"
+      scale - percentage to scale by represented as a decimal
+      filter - string representing filter to apply to resized image - default is "ANTIALIAS"
+      crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
+    """
+
+    #task_id = str(processimage.request.id)
+    #create Result Directory
+    #resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
+    #os.makedirs(resultpath)
+
+    _processimage(inpath=inpath,
+                  outpath=outpath,
+                  outformat=outformat,
+                  filter=filter,
+                  scale=scale,
+                  crop=crop
+                  )
+
+
 
 @task
 def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None,force_overwrite=False):
@@ -183,6 +212,54 @@ def process_recipe(derivative_args):
         recipe_file_creation(bag_name,mmsid,formatparams)
         update_catalog(bag_name,formatparams,mmsid["mmsid"])
         return "derivative-recipe file of bag is generated"
+
+@task
+def bag_derivative(bag_name,formatparams,update_manifest=True):
+    """
+        This methods create a bag for the derivative folder
+        and updates the bag-info.txt generated
+        args :
+            bagName: str
+            update_manifest : boolean
+    """
+
+    path = _get_path(bag_name,formatparams)
+    try:
+        bag=bagit.Bag(path)
+    except bagit.BagError:
+        bag = bagit.make_bag(path)
+    bag.info['External-Description'] = bag_name
+    bag.info['External-Identifier'] = 'University of Oklahoma Libraries'
+
+    try:
+        bag.save(manifests=update_manifest)
+    except IOError as err:
+        logging.error(err)
+
+
+@task
+def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
+    """
+        This method creates the recipe.json file and updates it into the derivative folder of the bag
+        args:
+            bag_name: str - name of the bag
+            mmsid: dictionary "mmsid":value
+            formatparams :  str eg . jpeg_040_antialias
+    """
+    path = _get_path(bag_name,formatparams)
+    try:
+        bag = bagit.Bag(path)
+        payload = bag.payload_entries()
+        recipefile = "{0}/{1}.json".format(path,bag_name)
+        recipe=make_recipe(bag_name,mmsid,payload,formatparams,title)
+        logging.debug("Writing recipe to: {0}".format(recipefile))
+        with open(recipefile,"w") as f:
+            f.write(recipe.decode("UTF-8"))
+        bag.save()
+    except bagit.BagError:
+        logging.debug("Not a bag: {0}".format(path))
+    except IOError as err:
+        logging.error(err)
 
 @task
 def insert_data_into_mongoDB():

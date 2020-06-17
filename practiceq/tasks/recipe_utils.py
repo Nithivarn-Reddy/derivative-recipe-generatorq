@@ -11,55 +11,8 @@ repoUUID = uuid5(NAMESPACE_DNS, 'repository.ou.edu')
 
 ou_derivative_bag_url = "https://bag.ou.edu/derivative"
 
-def bag_derivative(bag_name,formatparams,update_manifest=True):
-    """
-        This methods create a bag for the derivative folder
-        and updates the bag-info.txt generated
-        args :
-            bagName: str
-            update_manifest : boolean
-    """
-
-    path = _get_path(bag_name,formatparams)
-    try:
-        bag=bagit.Bag(path)
-    except bagit.BagError:
-        bag = bagit.make_bag(path)
-    bag.info['External-Description'] = bag_name
-    bag.info['External-Identifier'] = 'University of Oklahoma Libraries'
-
-    try:
-        bag.save(manifests=update_manifest)
-    except IOError as err:
-        logging.error(err)
-
-#TODO: change over here
 def _get_path(bag_name,formatparams):
     return "/mnt/derivative/{0}/{1}".format(bag_name,formatparams)
-
-def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
-    """
-        This method creates the recipe.json file and updates it into the derivative folder of the bag
-        args:
-            bag_name: str - name of the bag
-            mmsid: dictionary "mmsid":value
-            formatparams :  str eg . jpeg_040_antialias
-    """
-    path = _get_path(bag_name,formatparams)
-    try:
-        bag = bagit.Bag(path)
-        payload = bag.payload_entries()
-        recipefile = "{0}/{1}.json".format(path,bag_name)
-        recipe=make_recipe(bag_name,mmsid,payload,formatparams,title)
-        logging.debug("Writing recipe to: {0}".format(recipefile))
-        with open(recipefile,"w") as f:
-            f.write(recipe.decode("UTF-8"))
-        bag.save()
-    except bagit.BagError:
-        logging.debug("Not a bag: {0}".format(path))
-    except IOError as err:
-        logging.error(err)
-
 
 def make_recipe(bag_name,mmsid,payload,formatparams,title):
     """

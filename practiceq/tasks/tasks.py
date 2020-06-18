@@ -112,10 +112,11 @@ def update_catalog(bag,paramstring,mmsid=None):
     update_derivative_values = {
         "$set":
             {
-                "derivatives":
-                    {
-                        paramstring: document["derivatives"][paramstring]
-                    }
+                "derivatives": document["derivatives"]
+
+                   # {
+                    #    paramstring: document["derivatives"][paramstring]
+                    #}
             }
     }
     general_update_status = collection.update_one(myquery,update_derivative_values)

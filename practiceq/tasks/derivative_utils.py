@@ -42,12 +42,15 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
             print("Please Provide the correct filter for Image e.g - ANTIALIAS")
         size = [x * scale for x in image.size]
         image.thumbnail(size, imagefilter)
-    if(outformat == 'jpg' or outformat=='tif'):
         image.save(outpath)
+
+    """    
     else:
         try:
             image.save(outpath,outformat)
         except KeyError:
             print("Please Provide the correct OutputFormat for the image")
+            
+    """
 
 

@@ -43,7 +43,7 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
             print("Please Provide the correct filter for Image e.g - ANTIALIAS")
         size = [x * scale for x in image.size]
         image.thumbnail(size, imagefilter)
-        logging.error(inpath,outpath,outformat,filter,scale,crop)
+        print((inpath,outpath,outformat,filter,scale,crop))
         image.save(outpath)
 
     """    

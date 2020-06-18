@@ -95,10 +95,10 @@ def update_catalog(bag,paramstring,mmsid=None):
         update_mmsid_error = {
             "$set":
                 {
-                    "application":
-                        {
-                            "islandora": document["application"]["islandora"]
-                        }
+                    "application": document["application"]
+                       # {
+                          #  "islandora": document["application"]["islandora"]
+                       # }
                 }
         }
         status = collection.update_one(myquery,update_mmsid_error)

@@ -151,7 +151,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
 
 
 @task
-def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="JPEG",filter='ANTIALIAS',scale=None, crop=None,force_overwrite=False):
+def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTIALIAS',scale=None, crop=None,force_overwrite=False):
     """
     bagname = List containing bagnames eg : [bag1,bag2...]
     source = source file.

@@ -1,5 +1,7 @@
 from PIL import Image
 import logging
+from tempfile import NamedTemporaryFile
+from subprocess import check_call, check_output
 base_url = "https://cc.lib.ou.edu"
 
 def _formatextension(imageformat):
@@ -24,15 +26,22 @@ def _params_as_string(outformat="", filter="", scale=None, crop=None):
     imgcrop = "_".join((str(x) for x in crop)) if crop else None
     return "_".join((x for x in (imgformat, imgscale, imgfilter, imgcrop) if x))
 
-# FIXME:errors out on tiff derivatives.
+# FIXME:errors out on tiff derivatives, png -> jpeg convertion.
 def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
     Internal function to create image derivatives
 
-    jpg as outformat isn't available . So checking whether outformat is jpg or 'tif' so that we can save it directly
-    with the outpath extension available. Else save it with image.save(outpath,outformat).
     """
-    image = Image.open(inpath)
+    try:
+        image = Image.open(inpath)
+    except (IOError, OSError):
+        # workaround for Pillow not handling 16bit images
+        if "16-bit" in check_output(("identify", inpath)):
+            with NamedTemporaryFile() as tmpfile:
+                check_call(("convert", inpath, "-depth", "8", tmpfile.name))
+                image = Image.open(tmpfile.name)
+        else:
+            raise Exception
 
     if crop:
         image = image.crop(crop)
@@ -45,15 +54,12 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
         size = [x * scale for x in image.size]
         image.thumbnail(size, imagefilter)
         print((inpath,outpath,outformat,filter,scale,crop))
-        image.save(outpath)
 
-    """    
-    else:
-        try:
-            image.save(outpath,outformat)
-        except KeyError:
-            print("Please Provide the correct OutputFormat for the image")
+    try:
+        image.save(outpath,outformat)
+    except KeyError:
+        print("Please Provide the correct OutputFormat for the image")
             
-    """
+
 
 

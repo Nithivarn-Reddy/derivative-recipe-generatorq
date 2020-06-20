@@ -88,14 +88,14 @@ def update_catalog(bag,paramstring,mmsid=None):
     myquery = {"_id":document_id}
 
     if mmsid == None:
-        if "error" in document["application"]["islandora"].keys():
-            document["application"]["islandora"]["error"].append("mmsid not found")
+        if "error" in document.keys():
+            document["error"].append("mmsid not found")
         else:
-            document["application"]["islandora"].update({"error": ["mmsid not found"]})
+            document.update({"error": ["mmsid not found"]})
         update_mmsid_error = {
             "$set":
                 {
-                    "application": document["application"]
+                    "error": document["error"]
                        # {
                           #  "islandora": document["application"]["islandora"]
                        # }
@@ -113,10 +113,6 @@ def update_catalog(bag,paramstring,mmsid=None):
         "$set":
             {
                 "derivatives": document["derivatives"]
-
-                   # {
-                    #    paramstring: document["derivatives"][paramstring]
-                    #}
             }
     }
     general_update_status = collection.update_one(myquery,update_derivative_values)

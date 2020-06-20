@@ -24,6 +24,7 @@ def _params_as_string(outformat="", filter="", scale=None, crop=None):
     imgcrop = "_".join((str(x) for x in crop)) if crop else None
     return "_".join((x for x in (imgformat, imgscale, imgfilter, imgcrop) if x))
 
+# FIXME:errors out on tiff derivatives.
 def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
     Internal function to create image derivatives

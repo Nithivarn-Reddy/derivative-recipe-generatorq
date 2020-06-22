@@ -47,8 +47,9 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
     if scale:
         try:
             imagefilter = getattr(Image, filter.upper())
-        except(AttributeError):
+        except AttributeError:
             print("Please Provide the correct filter for Image e.g - ANTIALIAS")
+            raise Exception
         size = [x * scale for x in image.size]
         image.thumbnail(size, imagefilter)
         print((inpath,outpath,outformat,filter,scale,crop))

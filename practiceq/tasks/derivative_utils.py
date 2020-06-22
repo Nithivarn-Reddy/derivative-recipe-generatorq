@@ -1,5 +1,4 @@
 from PIL import Image
-import logging
 from tempfile import NamedTemporaryFile
 from subprocess import check_call, check_output
 base_url = "https://cc.lib.ou.edu"
@@ -35,7 +34,7 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
     try:
         image = Image.open(inpath)
         # workaround for Pillow not handling 16bit images
-        if "16-bit" in check_output(("identify", inpath)):
+        if "16-bit" in str(check_output(("identify", inpath))):
             with NamedTemporaryFile() as tmpfile:
                 check_call(("convert", inpath, "-depth", "8", tmpfile.name))
                 image = Image.open(tmpfile.name)

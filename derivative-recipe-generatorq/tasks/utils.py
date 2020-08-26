@@ -23,10 +23,13 @@ def get_mmsid(bag_name,path_to_bag=None):
     bag_info = yaml.load(fh)
     try:
         mmsid = bag_info['FIELD_EXTERNAL_DESCRIPTION'].split()[-1].strip()
+        print(type(mmsid))
+        print(mmsid)
     except KeyError:
         logging.error("Cannot determine mmsid for bag from bag-info: {0}".format(bag_name))
         return None
     if re.match("^[0-9]{8,19}$", mmsid):  # check that we have an mmsid like value
+        print("matching value -- ",re.match("^[0-9]{8,19}$", mmsid))
         return mmsid
     return None
 

@@ -26,7 +26,7 @@ def get_mmsid(bag_name,path_to_bag=None):
     except KeyError:
         logging.error("Cannot determine mmsid for bag from bag-info: {0}".format(bag_name))
         return None
-    if re.match("^[0-9]+$", mmsid):  # check that we have an mmsid like value
+    if re.match("^[0-9]{8,19}$", mmsid):  # check that we have an mmsid like value
         return mmsid
     return None
 
@@ -43,6 +43,8 @@ def get_marc_subfield_text(tag_id, sub_code, xml_tree):
         return None
 
 def get_title_from_marc(xml):
+    if xml is None:
+        return None
     tag_preferences = OrderedDict([
         # tag id, [ subfield codes ]
         (130, ['a']),
@@ -87,7 +89,7 @@ def get_bib_record(mmsid):
     apikey = os.environ.get('ALMA_KEY')
     if not apikey:
         logging.error("Could not get Alma key")
-        return {"error": "Alma key required or not found - Try Again after providing the key"}
+        return None
     if apikey and mmsid:
         try:
             response = requests.get(url.format(mmsid,apikey))

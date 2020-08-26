@@ -87,6 +87,7 @@ def get_bib_record(mmsid):
     apikey = os.environ.get('ALMA_KEY')
     if not apikey:
         logging.error("Could not get Alma key")
+        return {"error": "Alma key required or not found - Try Again after providing the key"}
     if apikey and mmsid:
         try:
             response = requests.get(url.format(mmsid,apikey))

@@ -5,13 +5,12 @@ import glob as glob
 from celery import Celery
 import celeryconfig
 from uuid import uuid5, NAMESPACE_DNS
-import shutil
 from shutil import rmtree
 import datetime
 from .derivative_utils import _params_as_string,_formatextension,_processimage
 from .recipe_utils import _get_path
-from .utils import *
 from .recipe_utils import *
+import logging
 
 
 
@@ -207,8 +206,14 @@ def process_recipe(derivative_args):
     for bag_name,mmsid in bags.items():
         bag_derivative(bag_name,formatparams)
         recipe_file_creation(bag_name,mmsid,formatparams)
-        update_catalog(bag_name,formatparams,mmsid["mmsid"])
+        status = update_catalog(bag_name,formatparams,mmsid["mmsid"])
+        if(not status):
+           raise update_catalog_error("The data is not updated in catalog - May be the record is not found or something is failed")
         return "derivative-recipe file of bag is generated"
+
+class update_catalog_error(Exception):
+    pass
+
 
 @task
 def bag_derivative(bag_name,formatparams,update_manifest=True):

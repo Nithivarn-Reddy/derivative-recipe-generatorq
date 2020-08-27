@@ -44,7 +44,7 @@ def getAllBags():
 def getSample(size=4):
     try:
         #list(random.sample(list(getAllBags()), size))
-        yield ['Apian_1545','Accum_1820','Beyer_1562']
+        yield ['Apian_1545','Accum_1820','Beyer_1562','Abbati_1703']
     except:
         return getAllBags()
 @task

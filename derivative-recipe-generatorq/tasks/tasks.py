@@ -58,13 +58,14 @@ def automate(outformat,filter,scale=None,crop=None,force_overwrite=False,bag=Non
     for bag in getSample():
         result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
                        process_recipe.s())
+        result.delay()
     """
     if bag:
         result = chain(read_source_update_derivative.s(bag,"source","derivative",outformat,filter,scale=0.4),process_recipe.s())
     else:
         result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale=0.4),process_recipe.s())
     """
-    result.delay()
+
     return "automate kicked off"
 
 def listpagefiles(bag_name, paramstring):

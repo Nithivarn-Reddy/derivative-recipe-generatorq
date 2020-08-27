@@ -44,7 +44,7 @@ def getAllBags():
 def getSample(size=4):
     try:
         #list(random.sample(list(getAllBags()), size))
-        yield ['Apian_1545','Abbati_1703','Accum_1820','Beyer_1562']
+        yield ['Apian_1545','Accum_1820','Beyer_1562']
     except:
         return getAllBags()
 @task
@@ -165,7 +165,7 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
         bags = [bags]
     for bag in bags:
         task_id = str(read_source_update_derivative.request.id)
-        formatparams = _params_as_string(outformat,filter,scale,crop)
+        format_params = _params_as_string(outformat,filter,scale,crop)
 
         path_to_bag = "{0}/{1}/{2}/".format(mount_point,s3_source,bag)
         mmsid =get_mmsid(bag,path_to_bag)
@@ -174,21 +174,21 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
             bags_with_mmsids[bag]['mmsid']=mmsid
             path_to_tif_files_of_bag = "{0}/{1}/{2}/data/*.tif".format(mount_point,s3_source,bag)
             print(path_to_tif_files_of_bag)
-            outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,formatparams)
-            if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)) and force_overwrite:
+            outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,format_params)
+            if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and force_overwrite:
                 rmtree(outdir)
-            if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)) and not force_overwrite:
+            if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and not force_overwrite:
                 raise derivative_generation_error("derivative already exists and force_overwrite is set to false")
-            if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, formatparams)):
+            if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)):
                 os.makedirs(outdir)
             for file in glob.glob(path_to_tif_files_of_bag):
                 print(file)
-                outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,formatparams,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
+                outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,format_params,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 processimage(inpath=file,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
         else:
-            update_catalog(bag,formatparams,mmsid)
+            update_catalog(bag,format_params,mmsid)
     return {"local_derivatives": "{0}/oulib_tasks/{1}".format(base_url, task_id), "s3_destination": s3_destination,
-            "task_id": task_id,"bags":bags_with_mmsids,"format_params":formatparams}
+            "task_id": task_id,"bags":bags_with_mmsids,"format_params":format_params}
 
 @task
 def process_recipe(derivative_args):
@@ -198,15 +198,14 @@ def process_recipe(derivative_args):
         params:
         derivative_args:The arguments returned by readSource_updateDerivative function.
     """
+
     #task_id= derivative_args.get('task_id')
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
-    formatparams = derivative_args.get('format_params')
-    #formatparams="jpeg_040_antialias"
-    #bags={"Abbati_1703":{"mmsid":9932140502042}}
+    format_params = derivative_args.get('format_params')
     for bag_name,mmsid in bags.items():
-        bag_derivative(bag_name,formatparams)
-        recipe_file_creation(bag_name,mmsid,formatparams)
-        status = update_catalog(bag_name,formatparams,mmsid["mmsid"])
+        bag_derivative(bag_name,format_params)
+        recipe_file_creation(bag_name,mmsid,format_params)
+        status = update_catalog(bag_name,format_params,mmsid["mmsid"])
         if(not status):
            raise update_catalog_error("The data is not updated in catalog - May be the record is not found or something is failed")
         return "derivative-recipe file of bag is generated"
@@ -216,7 +215,7 @@ class update_catalog_error(Exception):
 
 
 @task
-def bag_derivative(bag_name,formatparams,update_manifest=True):
+def bag_derivative(bag_name,format_params,update_manifest=True):
     """
         This methods create a bag for the derivative folder
         and updates the bag-info.txt generated
@@ -225,7 +224,7 @@ def bag_derivative(bag_name,formatparams,update_manifest=True):
             update_manifest : boolean
     """
 
-    path = _get_path(bag_name,formatparams)
+    path = _get_path(bag_name,format_params)
     try:
         bag=bagit.Bag(path)
     except bagit.BagError:
@@ -240,7 +239,7 @@ def bag_derivative(bag_name,formatparams,update_manifest=True):
 
 
 @task
-def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
+def recipe_file_creation(bag_name,mmsid,format_params,title=None):
     """
         This method creates the recipe.json file and updates it into the derivative folder of the bag
         args:
@@ -248,12 +247,12 @@ def recipe_file_creation(bag_name,mmsid,formatparams,title=None):
             mmsid: dictionary "mmsid":value
             formatparams :  str eg . jpeg_040_antialias
     """
-    path = _get_path(bag_name,formatparams)
+    path = _get_path(bag_name,format_params)
     try:
         bag = bagit.Bag(path)
         payload = bag.payload_entries()
         recipefile = "{0}/{1}.json".format(path,bag_name)
-        recipe=make_recipe(bag_name,mmsid,payload,formatparams,title)
+        recipe=make_recipe(bag_name,mmsid,payload,format_params,title)
         logging.debug("Writing recipe to: {0}".format(recipefile))
         with open(recipefile,"w") as f:
             f.write(recipe.decode("UTF-8"))

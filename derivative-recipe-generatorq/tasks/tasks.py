@@ -208,12 +208,9 @@ def process_recipe(derivative_args):
         recipe_file_creation(bag_name,mmsid,format_params)
         status = update_catalog(bag_name,format_params,mmsid["mmsid"])
         if(not status):
-           raise update_catalog_error("The data is not updated in catalog - May be the record is not found or something is failed")
+           logging.error("The data of the bag - {0} not updated in catalog - "
+                         "May be the record is not found or something is failed".format(bag_name))
         return "derivative-recipe file of bag is generated"
-
-class update_catalog_error(Exception):
-    pass
-
 
 @task
 def bag_derivative(bag_name,format_params,update_manifest=True):

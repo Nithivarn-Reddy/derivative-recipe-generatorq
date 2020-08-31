@@ -36,9 +36,11 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
     path = _get_path(bag_name,formatparams)
     meta['recipe']['metadata']=OrderedDict();
     if get_marc_xml(mmsid["mmsid"],path,bib):
-        meta['recipe']['metadata']['marcxml'] = "{0}/{1}/{2}/marc.xml".format(ou_derivative_bag_url, bag_name, formatparams)
-    else:
-        meta['recipe']['metadata']['marcxml'] = "{0}/{1}/marc.xml".format(ou_derivative_bag_url, bag_name)
+        meta['recipe']['metadata'] = {}
+        if formatparams:
+            meta['recipe']['metadata']['marcxml'] = "{0}/{1}/{2}/marc.xml".format(ou_derivative_bag_url, bag_name, formatparams)
+        else:
+            meta['recipe']['metadata']['marcxml'] = "{0}/{1}/marc.xml".format(ou_derivative_bag_url, bag_name)
     if title is None:
         logging.debug("Getting title from marc file")
         meta['recipe']['label']= get_title_from_marc(bib)

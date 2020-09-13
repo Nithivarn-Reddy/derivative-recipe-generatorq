@@ -249,7 +249,8 @@ def process_recipe(derivative_args):
            logging.error("The data of the bag - {0} not updated in catalog - "
                          "May be the record is not found or something is failed".format(bag_name))
            status_dict["unsuccessful_bags"].append(bag_name)
-        status_dict["successful_bags"].append(bag_name)
+        else:
+            status_dict["successful_bags"].append(bag_name)
     return "Derivative-Recipe stats : {0}".format(str(status_dict))
 
 @task

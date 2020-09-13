@@ -61,8 +61,8 @@ def automate(outformat,filter,scale=None,crop=None,force_overwrite=False,bag=Non
             result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
                        process_recipe.s())
             result.delay()
-        except derivative_generation_error:
-            continue
+        except Exception:
+            pass
     """
     if bag:
         result = chain(read_source_update_derivative.s(bag,"source","derivative",outformat,filter,scale=0.4),process_recipe.s())
@@ -122,9 +122,10 @@ def update_catalog(bag,paramstring,mmsid=None):
     general_update_status = collection.update_one(myquery,update_derivative_values)
     return general_update_status.raw_result['nModified'] !=0
 
+"""
 class derivative_generation_error(Exception):
     pass
-
+"""
 @task
 def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
@@ -186,7 +187,7 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
             if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and force_overwrite:
                 rmtree(outdir)
             if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and not force_overwrite:
-                raise derivative_generation_error("derivative already exists and force_overwrite is set to false")
+                raise Exception("derivative already exists and force_overwrite is set to false")
             if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)):
                 os.makedirs(outdir)
             for file in file_paths:

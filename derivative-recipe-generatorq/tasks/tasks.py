@@ -57,9 +57,12 @@ def automate(outformat,filter,scale=None,crop=None,force_overwrite=False,bag=Non
     # If bag is given is then kickoff separate chain.
 
     for bag in getSample():
-        result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
+        try:
+            result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
                        process_recipe.s())
-        result.delay()
+            result.delay()
+        except derivative_generation_error:
+            continue
     """
     if bag:
         result = chain(read_source_update_derivative.s(bag,"source","derivative",outformat,filter,scale=0.4),process_recipe.s())
@@ -135,12 +138,6 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
       filter - string representing filter to apply to resized image - default is "ANTIALIAS"
       crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
     """
-
-    #task_id = str(processimage.request.id)
-    #create Result Directory
-    #resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
-    #os.makedirs(resultpath)
-
     _processimage(inpath=inpath,
                   outpath=outpath,
                   outformat=outformat,
@@ -236,8 +233,6 @@ def process_recipe(derivative_args):
         params:
         derivative_args:The arguments returned by readSource_updateDerivative function.
     """
-
-    #task_id= derivative_args.get('task_id')
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     format_params = derivative_args.get('format_params')
     status_dict = defaultdict(list)

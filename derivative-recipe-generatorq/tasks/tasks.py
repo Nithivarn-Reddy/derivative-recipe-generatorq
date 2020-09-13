@@ -246,7 +246,7 @@ def process_recipe(derivative_args):
         if(not status):
            logging.error("The data of the bag - {0} not updated in catalog - "
                          "May be the record is not found or something is failed".format(bag_name))
-        return "derivative-recipe file of bag is generated"
+    return "derivative-recipe file of bag is generated"
 
 @task
 def bag_derivative(bag_name,format_params,update_manifest=True):

@@ -93,7 +93,7 @@ def get_bib_record(mmsid):
     if not apikey:
         logging.error("Could not get Alma key")
         return None
-    if apikey and mmsid:
+    elif apikey and mmsid:
         try:
             response = requests.get(url.format(mmsid,apikey))
             if response.status_code == requests.codes.ok:
@@ -101,10 +101,13 @@ def get_bib_record(mmsid):
             else:
                 logging.error("Alma server returned code: {0}".format(response.status_code))
 
-                logging.error(b"Alma Response content: {0}".format(response.content))
+                logging.error("Alma Response content: {0}".format(response.content))
                 return None
         except requests.ConnectionError:
             logging.error("Alma Connection Error ")
             return None
+    else:
+        logging.error("No apikey and No mmsid")
+        return None
 
 

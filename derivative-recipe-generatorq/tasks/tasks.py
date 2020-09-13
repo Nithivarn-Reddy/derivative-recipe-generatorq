@@ -191,7 +191,7 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
                 raise derivative_generation_error("derivative already exists and force_overwrite is set to false")
             if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)):
                 os.makedirs(outdir)
-            for file in glob.glob(file_paths):
+            for file in file_paths:
                 print(file)
                 outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,format_params,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 processimage(inpath=file,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)

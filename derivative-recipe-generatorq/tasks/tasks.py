@@ -1,4 +1,5 @@
 import random
+from collections import defaultdict
 from celery import chain
 from celery.task import task
 import glob as glob
@@ -239,6 +240,7 @@ def process_recipe(derivative_args):
     #task_id= derivative_args.get('task_id')
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     format_params = derivative_args.get('format_params')
+    status_dict = defaultdict(list)
     for bag_name,mmsid in bags.items():
         bag_derivative(bag_name,format_params)
         recipe_file_creation(bag_name,mmsid,format_params)
@@ -246,7 +248,9 @@ def process_recipe(derivative_args):
         if(not status):
            logging.error("The data of the bag - {0} not updated in catalog - "
                          "May be the record is not found or something is failed".format(bag_name))
-    return "derivative-recipe file of bag is generated"
+           status_dict["unsuccessful_bags"].append(bag_name)
+        status_dict["successful_bags"].append(bag_name)
+    return "Derivative-Recipe stats : {0}".format(str(status_dict))
 
 @task
 def bag_derivative(bag_name,format_params,update_manifest=True):

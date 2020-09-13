@@ -173,14 +173,14 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
             bags_with_mmsids[bag]['mmsid']=mmsid
             file_extensions = ["*.tif","*.TIFF","*.TIF","*.tiff"]
             file_paths=[]
-            path_to_manifest_file = "{0}/{1}/{2}/data/manifest*.txt".format(mount_point,s3_source,bag)
+            path_to_manifest_file = "{0}/{1}/{2}/manifest*.txt".format(mount_point,s3_source,bag)
             path_to_bag = "{0}/{1}/{2}/data/".format(mount_point, s3_source, bag)
             for file in glob.glob(path_to_manifest_file):
                 if(getIntersection(file)):
-                    logging.error("Conflict in bag - {0} : Ambiguous file names (eg. 001.tif , 001.tiff)")
+                    logging.error("Conflict in bag - {0} : Ambiguous file names (eg. 001.tif , 001.tiff)".format(bag))
                 else:
                     for ext in file_extensions:
-                        file_paths.extend(glob.glob(os.path.join((path_to_bag,ext))))
+                        file_paths.extend(glob.glob(os.path.join(path_to_bag,ext)))
             if file_paths is None:
                 continue;
             print(file_paths)

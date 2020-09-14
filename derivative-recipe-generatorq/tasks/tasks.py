@@ -61,8 +61,9 @@ def automate(outformat,filter,scale=None,crop=None,force_overwrite=False,bag=Non
             result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
                        process_recipe.s())
             result.delay()
-        except Exception:
-            pass
+        #FIXME: Check how to pass the exception.
+        except Exception as e:
+            print(e)
     """
     if bag:
         result = chain(read_source_update_derivative.s(bag,"source","derivative",outformat,filter,scale=0.4),process_recipe.s())

@@ -197,6 +197,8 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
                 update_catalog(bag,format_params,mmsid)
         except Exception as e:
             print("handled exception here")
+            continue
+            print("next bag")
     return {"s3_destination": s3_destination,
             "bags":bags_with_mmsids,"format_params":format_params}
 

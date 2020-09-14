@@ -241,6 +241,9 @@ def process_recipe(derivative_args):
     format_params = derivative_args.get('format_params')
     status_dict = defaultdict(list)
     for bag_name,mmsid in bags.items():
+        if not mmsid:
+           status_dict["unsuccessful_bags"].append(bag_name)
+           continue
         bag_derivative(bag_name,format_params)
         recipe_file_creation(bag_name,mmsid,format_params)
         status = update_catalog(bag_name,format_params,mmsid["mmsid"])

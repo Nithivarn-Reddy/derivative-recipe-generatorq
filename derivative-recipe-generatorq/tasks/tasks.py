@@ -190,15 +190,14 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
                 if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)):
                     os.makedirs(outdir)
                 for file in file_paths:
-                    print(file)
+                    print("It shouldn't enter here")
                     outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,format_params,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                     processimage(inpath=file,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
             else:
                 update_catalog(bag,format_params,mmsid)
         except Exception as e:
-            print("handled exception here")
+            print("handled exception here for - - {0}".format(bag))
             continue
-            print("next bag")
     return {"s3_destination": s3_destination,
             "bags":bags_with_mmsids,"format_params":format_params}
 

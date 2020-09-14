@@ -165,7 +165,6 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
                             file_paths.extend(glob.glob(os.path.join(path_to_bag,ext)))
                 if file_paths is None:
                     continue;
-                print(file_paths)
                 outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,format_params)
                 if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and force_overwrite:
                     rmtree(outdir)
@@ -174,15 +173,14 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
                 if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)):
                     os.makedirs(outdir)
                 for file in file_paths:
-                    print("It shouldn't enter here")
                     outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,format_params,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                     processimage(inpath=file,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
                 bags_with_mmsids[bag]['mmsid'] = mmsid
             else:
                 update_catalog(bag,format_params,mmsid)
         except Exception as e:
-            print(e)
-            print("handled exception here for - - {0}".format(bag))
+            logging.error(e)
+            logging.error("handled exception here for - - {0}".format(bag))
     return {"s3_destination": s3_destination,
             "bags":bags_with_mmsids,"format_params":format_params}
 
@@ -201,12 +199,8 @@ def getIntersection(file):
         for line in lines:
             line = line.strip();
             ListOfFileNames.append(line.split("/")[-1])
-    print(len(ListOfFileNames))
-    listOfFileExtensions = [".tif",".tiff"]
     listOfTif = [name.split(".")[0] for name in ListOfFileNames if name.endswith(".tif") or name.endswith(".TIF")]
     listOfTiff = [name.split(".")[0] for name in ListOfFileNames if name.endswith(".tiff") or name.endswith(".TIFF")]
-    print(listOfTif)
-    print(listOfTiff)
     intersectionList = list(set(listOfTiff) & set(listOfTif))
     if(len(intersectionList) == 0):
         return False;

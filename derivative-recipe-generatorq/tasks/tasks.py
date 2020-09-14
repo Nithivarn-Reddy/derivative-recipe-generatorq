@@ -168,7 +168,6 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
             mmsid =get_mmsid(bag,path_to_bag)
             if mmsid:
                 bags_with_mmsids[bag]=OrderedDict()
-                bags_with_mmsids[bag]['mmsid']=mmsid
                 file_extensions = ["*.tif","*.TIFF","*.TIF","*.tiff"]
                 file_paths=[]
                 path_to_manifest_file = "{0}/{1}/{2}/manifest*.txt".format(mount_point,s3_source,bag)
@@ -193,9 +192,11 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
                     print("It shouldn't enter here")
                     outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,format_params,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                     processimage(inpath=file,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
+                bags_with_mmsids[bag]['mmsid'] = mmsid
             else:
                 update_catalog(bag,format_params,mmsid)
         except Exception as e:
+            print(e)
             print("handled exception here for - - {0}".format(bag))
             continue
     return {"s3_destination": s3_destination,

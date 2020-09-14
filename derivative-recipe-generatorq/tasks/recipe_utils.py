@@ -30,10 +30,8 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
     meta['recipe']['uuid'] = str(uuid5(repoUUID,bag_name))
     meta['recipe']['label'] = title
 
-    #FIXME:erroring out on wrong APIKEY.
     bib = get_bib_record(mmsid["mmsid"])
-
-    print("Bib value -- " , bib)
+    logging.debug("Bib record value -- {0}".format(bib))
     path = _get_path(bag_name,formatparams)
     meta['recipe']['metadata']=OrderedDict();
     if get_marc_xml(mmsid["mmsid"],path,bib):

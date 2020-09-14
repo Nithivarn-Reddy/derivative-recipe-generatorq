@@ -71,68 +71,6 @@ def listpagefiles(bag_name, paramstring):
     return [page['file'] for page in recipe['recipe']['pages']]
 
 @task
-def update_catalog(bag,paramstring,mmsid=None):
-    db_client = app.backend.database.client
-    collection = db_client.cybercom.catalog
-    query = {"bag": bag}
-    document = collection.find_one(query)
-    if document == None:
-        return False
-    document_id = document['_id']
-    myquery = {"_id":document_id}
-
-    if mmsid == None:
-        if "error" in document.keys():
-            document["error"].append("mmsid not found")
-        else:
-            document.update({"error": ["mmsid not found"]})
-        update_mmsid_error = {
-            "$set":
-                {
-                    "error": document["error"]
-                }
-        }
-        status = collection.update_one(myquery,update_mmsid_error)
-        return status.raw_result['nModified'] != 0
-    if paramstring not in document["derivatives"]:
-        document["derivatives"][paramstring]={}
-    #ask whether bag_name needs to be lower.
-    document["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag)
-    document["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
-    document["derivatives"][paramstring]["pages"] = listpagefiles(bag, paramstring)
-    update_derivative_values = {
-        "$set":
-            {
-                "derivatives": document["derivatives"]
-            }
-    }
-    general_update_status = collection.update_one(myquery,update_derivative_values)
-    return general_update_status.raw_result['nModified'] !=0
-
-@task
-def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
-    """
-    Digilab TIFF derivative Task
-
-    args:
-      inpath - path string to input image
-      outpath - path string to output image
-      outformat - string representation of image format - default is "TIFF"
-      scale - percentage to scale by represented as a decimal
-      filter - string representing filter to apply to resized image - default is "ANTIALIAS"
-      crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
-    """
-    _processimage(inpath=inpath,
-                  outpath=outpath,
-                  outformat=outformat,
-                  filter=filter,
-                  scale=scale,
-                  crop=crop
-                  )
-
-
-
-@task
 def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTIALIAS',scale=None, crop=None,force_overwrite=False):
     """
     bagname = List containing bagnames eg : [bag1,bag2...]
@@ -184,8 +122,6 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
     return {"s3_destination": s3_destination,
             "bags":bags_with_mmsids,"format_params":format_params}
 
-
-
 def getIntersection(file):
     """
     This method is used for knowing if their are any name conflicts inside the manifest file of each bag.
@@ -206,6 +142,66 @@ def getIntersection(file):
         return False;
     else:
         return True;
+
+@task
+def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
+    """
+    Digilab TIFF derivative Task
+
+    args:
+      inpath - path string to input image
+      outpath - path string to output image
+      outformat - string representation of image format - default is "TIFF"
+      scale - percentage to scale by represented as a decimal
+      filter - string representing filter to apply to resized image - default is "ANTIALIAS"
+      crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
+    """
+    _processimage(inpath=inpath,
+                  outpath=outpath,
+                  outformat=outformat,
+                  filter=filter,
+                  scale=scale,
+                  crop=crop
+                  )
+
+@task
+def update_catalog(bag,paramstring,mmsid=None):
+    db_client = app.backend.database.client
+    collection = db_client.cybercom.catalog
+    query = {"bag": bag}
+    document = collection.find_one(query)
+    if document == None:
+        return False
+    document_id = document['_id']
+    myquery = {"_id":document_id}
+
+    if mmsid == None:
+        if "error" in document.keys():
+            document["error"].append("mmsid not found")
+        else:
+            document.update({"error": ["mmsid not found"]})
+        update_mmsid_error = {
+            "$set":
+                {
+                    "error": document["error"]
+                }
+        }
+        status = collection.update_one(myquery,update_mmsid_error)
+        return status.raw_result['nModified'] != 0
+    if paramstring not in document["derivatives"]:
+        document["derivatives"][paramstring]={}
+    #ask whether bag_name needs to be lower.
+    document["derivatives"][paramstring]["recipe"] = recipe_url.format(bag, paramstring, bag)
+    document["derivatives"][paramstring]["datetime"] = datetime.datetime.utcnow().isoformat()
+    document["derivatives"][paramstring]["pages"] = listpagefiles(bag, paramstring)
+    update_derivative_values = {
+        "$set":
+            {
+                "derivatives": document["derivatives"]
+            }
+    }
+    general_update_status = collection.update_one(myquery,update_derivative_values)
+    return general_update_status.raw_result['nModified'] !=0
 
 @task
 def process_recipe(derivative_args):

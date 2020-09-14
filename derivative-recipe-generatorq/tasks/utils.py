@@ -100,7 +100,6 @@ def get_bib_record(mmsid):
                 return response.content
             else:
                 logging.error("Alma server returned code: {0}".format(response.status_code))
-
                 logging.error("Alma Response content: {0}".format(response.content))
                 return None
         except requests.ConnectionError:

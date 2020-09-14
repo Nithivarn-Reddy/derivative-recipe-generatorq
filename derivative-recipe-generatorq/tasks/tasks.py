@@ -57,13 +57,10 @@ def automate(outformat,filter,scale=None,crop=None,force_overwrite=False,bag=Non
     # If bag is given is then kickoff separate chain.
 
     for bag in getSample():
-        try:
-            result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
+        result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
                        process_recipe.s())
-            result.delay()
+        result.delay()
         #FIXME: Check how to pass the exception.
-        except Exception as e:
-            print("Handled over here",bag)
     """
     if bag:
         result = chain(read_source_update_derivative.s(bag,"source","derivative",outformat,filter,scale=0.4),process_recipe.s())
@@ -165,38 +162,41 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
     if type(bags) == 'str':
         bags = [bags]
     for bag in bags:
-        format_params = _params_as_string(outformat,filter,scale,crop)
-        path_to_bag = "{0}/{1}/{2}/".format(mount_point,s3_source,bag)
-        mmsid =get_mmsid(bag,path_to_bag)
-        if mmsid:
-            bags_with_mmsids[bag]=OrderedDict()
-            bags_with_mmsids[bag]['mmsid']=mmsid
-            file_extensions = ["*.tif","*.TIFF","*.TIF","*.tiff"]
-            file_paths=[]
-            path_to_manifest_file = "{0}/{1}/{2}/manifest*.txt".format(mount_point,s3_source,bag)
-            path_to_bag = "{0}/{1}/{2}/data/".format(mount_point, s3_source, bag)
-            for file in glob.glob(path_to_manifest_file):
-                if(getIntersection(file)):
-                    logging.error("Conflict in bag - {0} : Ambiguous file names (eg. 001.tif , 001.tiff)".format(bag))
-                else:
-                    for ext in file_extensions:
-                        file_paths.extend(glob.glob(os.path.join(path_to_bag,ext)))
-            if file_paths is None:
-                continue;
-            print(file_paths)
-            outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,format_params)
-            if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and force_overwrite:
-                rmtree(outdir)
-            if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and not force_overwrite:
-                raise Exception("derivative already exists and force_overwrite is set to false")
-            if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)):
-                os.makedirs(outdir)
-            for file in file_paths:
-                print(file)
-                outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,format_params,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
-                processimage(inpath=file,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
-        else:
-            update_catalog(bag,format_params,mmsid)
+        try:
+            format_params = _params_as_string(outformat,filter,scale,crop)
+            path_to_bag = "{0}/{1}/{2}/".format(mount_point,s3_source,bag)
+            mmsid =get_mmsid(bag,path_to_bag)
+            if mmsid:
+                bags_with_mmsids[bag]=OrderedDict()
+                bags_with_mmsids[bag]['mmsid']=mmsid
+                file_extensions = ["*.tif","*.TIFF","*.TIF","*.tiff"]
+                file_paths=[]
+                path_to_manifest_file = "{0}/{1}/{2}/manifest*.txt".format(mount_point,s3_source,bag)
+                path_to_bag = "{0}/{1}/{2}/data/".format(mount_point, s3_source, bag)
+                for file in glob.glob(path_to_manifest_file):
+                    if(getIntersection(file)):
+                        logging.error("Conflict in bag - {0} : Ambiguous file names (eg. 001.tif , 001.tiff)".format(bag))
+                    else:
+                        for ext in file_extensions:
+                            file_paths.extend(glob.glob(os.path.join(path_to_bag,ext)))
+                if file_paths is None:
+                    continue;
+                print(file_paths)
+                outdir = "{0}/{1}/{2}/{3}".format(mount_point,s3_destination,bag,format_params)
+                if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and force_overwrite:
+                    rmtree(outdir)
+                if os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)) and not force_overwrite:
+                    raise Exception("derivative already exists and force_overwrite is set to false")
+                if not os.path.exists("{0}/derivative/{1}/{2}".format(mount_point, bag, format_params)):
+                    os.makedirs(outdir)
+                for file in file_paths:
+                    print(file)
+                    outpath = '{0}/{1}/{2}/{3}/{4}.{5}'.format(mount_point,"derivative",bag,format_params,file.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
+                    processimage(inpath=file,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
+            else:
+                update_catalog(bag,format_params,mmsid)
+        except Exception as e:
+            print("handled exception here")
     return {"s3_destination": s3_destination,
             "bags":bags_with_mmsids,"format_params":format_params}
 

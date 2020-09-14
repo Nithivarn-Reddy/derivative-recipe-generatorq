@@ -60,14 +60,6 @@ def automate(outformat,filter,scale=None,crop=None,force_overwrite=False,bag=Non
         result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
                        process_recipe.s())
         result.delay()
-        #FIXME: Check how to pass the exception.
-    """
-    if bag:
-        result = chain(read_source_update_derivative.s(bag,"source","derivative",outformat,filter,scale=0.4),process_recipe.s())
-    else:
-        result = chain(getSample.s(),read_source_update_derivative.s("source","derivative",outformat,filter,scale=0.4),process_recipe.s())
-    """
-
     return "automate kicked off"
 
 def listpagefiles(bag_name, paramstring):
@@ -98,9 +90,6 @@ def update_catalog(bag,paramstring,mmsid=None):
             "$set":
                 {
                     "error": document["error"]
-                       # {
-                          #  "islandora": document["application"]["islandora"]
-                       # }
                 }
         }
         status = collection.update_one(myquery,update_mmsid_error)
@@ -120,10 +109,6 @@ def update_catalog(bag,paramstring,mmsid=None):
     general_update_status = collection.update_one(myquery,update_derivative_values)
     return general_update_status.raw_result['nModified'] !=0
 
-"""
-class derivative_generation_error(Exception):
-    pass
-"""
 @task
 def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
@@ -198,7 +183,6 @@ def read_source_update_derivative(bags,s3_source="source",s3_destination="deriva
         except Exception as e:
             print(e)
             print("handled exception here for - - {0}".format(bag))
-            continue
     return {"s3_destination": s3_destination,
             "bags":bags_with_mmsids,"format_params":format_params}
 

@@ -48,13 +48,14 @@ def getSample(size=4):
         yield ['Apian_1545','Accum_1820','Beyer_1562','Abbati_1703']
     except:
         return getAllBags()
+
 @task
 def automate(outformat,filter,scale=None,crop=None,force_overwrite=False,bag=None):
     """
     This automates the process of derivative creation.
     :return: string "kicked off or not"
     """
-    # If bag is given is then kickoff separate chain.
+    #If bag is given is then kickoff separate chain.
 
     for bag in getSample():
         result = chain(read_source_update_derivative.s(bag, "source", "derivative", outformat, filter, scale,crop,force_overwrite),
@@ -63,6 +64,13 @@ def automate(outformat,filter,scale=None,crop=None,force_overwrite=False,bag=Non
     return "automate kicked off"
 
 def listpagefiles(bag_name, paramstring):
+    """
+    This is a helper function which returns the list of pages.
+
+    :param bag_name: Name of the bag
+    :param paramstring: eg., jpeg_040_antialias
+    :return: list of pagespaths [ '/x/y' ,'abc/xyz/' ... ]
+    """
     filename = "{0}.json".format(bag_name)
     path=_get_path(bag_name, paramstring)
     recipe_json = os.path.join(path,filename)
@@ -73,13 +81,21 @@ def listpagefiles(bag_name, paramstring):
 @task
 def read_source_update_derivative(bags,s3_source="source",s3_destination="derivative",outformat="TIFF",filter='ANTIALIAS',scale=None, crop=None,force_overwrite=False):
     """
-    bagname = List containing bagnames eg : [bag1,bag2...]
-    source = source file.
-    outformat = "TIFF or jpeg or jpg or tif"
+
+    This function is the starting function of the workflow used for derivative generation of the files.
+
+    :args
+    bags = List containing bagnames eg : [bag1,bag2...]
+    s3_source = source directory.
+    s3_destination : destionation directory.
+    outformat = "TIFF or JPEG"
     filter = "ANTALIAS" - filter type of the image.
-    scale = At what scale do you need the reduction of the size - eg 0.40 or o.20
+    scale = At what scale do you need the reduction of the size - eg 0.40 or 0.20
     crop = size in which the image needs to be cropped, Provide it as a list - eg - [10,10,20,40]
-    force_overwrite = overwrite the derivative bag already if it was already created with the previous paramaters. -eg: true.
+    force_overwrite = overwrite the derivative bag already if it was already created with the
+    previous paramaters. -eg: true.
+
+    :returns dictionary with s3_destionation , bags_with_mmsid:{} , format_params as keys and there values.
     """
     bags_with_mmsids = OrderedDict()
     if type(bags) == 'str':
@@ -166,6 +182,13 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
 
 @task
 def update_catalog(bag,paramstring,mmsid=None):
+    """
+
+    :param bag: bag name
+    :param paramstring: eg. jpeg_040_antialias
+    :param mmsid: mmsid of the bag
+    :return: boolean. True for successful updation. False for failure.
+    """
     db_client = app.backend.database.client
     collection = db_client.cybercom.catalog
     query = {"bag": bag}
@@ -206,10 +229,11 @@ def update_catalog(bag,paramstring,mmsid=None):
 @task
 def process_recipe(derivative_args):
     """
-        This function generates the recipe file and returns the json structure for each bag.
+        This function generates the recipe file and returns the json stats of which bags are successful
+        and which are not.
 
         params:
-        derivative_args:The arguments returned by readSource_updateDerivative function.
+        derivative_args:The arguments returned by read_source_update_derivative function.
     """
     bags = derivative_args.get('bags') #bags = { "bagname1" : { "mmsid": value} , "bagName2":{"mmsid":value}, ..}
     format_params = derivative_args.get('format_params')
@@ -277,8 +301,14 @@ def recipe_file_creation(bag_name,mmsid,format_params,title=None):
     except IOError as err:
         logging.error(err)
 
+
 @task
 def insert_data_into_mongoDB():
+    """
+    This is a test function used for inserting records into local database.
+
+    :return:
+    """
     response = requests.get('https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/?query={"filter":{"department":"DigiLab","project":{"$ne":"private"},"locations.s3.exists":{"$eq":true}}}&format=json&page_size=0')
     jobj = response.json()
     results = jobj.get('results')

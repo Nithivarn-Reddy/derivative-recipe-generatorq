@@ -22,6 +22,7 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
             mmsid = dictionary , "mmsid":value
             payload = dictionary , directory structure inside the /data of the bag
             formatparams :  str eg . jpeg_040_antialias
+        :returns JSON containing all the required details.
     """
     meta = OrderedDict()
     meta['recipe']= OrderedDict()
@@ -48,6 +49,13 @@ def make_recipe(bag_name,mmsid,payload,formatparams,title):
     return dumps(meta, indent=4, ensure_ascii=False).encode("UTF-8")
 
 def process_manifest(bag_name,payload,formatparams=None):
+    """
+
+    :param bag_name: name of the bag
+    :param payload: payload of the bag containing paths
+    :param formatparams: e.g., jpeg_040_antialias
+    :return: List of dictionaries e.g., [ {label: , "file": , "hash_key":} , ... ]
+    """
     template = """
     	{"label" : {{ idx }},"file" : {% if formatparams %} "{{"{}/{}/{}/{}".format(ou_derivative_bag_url, bagname, formatparams, file[0])}}" {% else %} "{{"{}/{}/{}".format(ou_derivative_bag_url, bagname, filename)}}"{% endif%},{% for hash_key,hash_value in file[1].items() %}"{{ hash_key }}" : "{{ hash_value }}",{% endfor%} "exif":"{{"{}.exif.txt".format(file[0].split("/")[1])}}"}
     """

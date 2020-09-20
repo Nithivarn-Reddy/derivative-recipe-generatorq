@@ -11,11 +11,12 @@ import os
 
 
 def get_mmsid(bag_name,path_to_bag=None):
-    #s3_bucket='ul-bagit'
-    #s3 = boto3.resource('s3')
-    #s3_key = "{0}/{1}/{2}".format('source', bag, 'bag-info.txt')
-    #recipe_obj = s3.Object(s3_bucket, s3_key)
+    """
 
+    :param bag_name: name of the bag
+    :param path_to_bag: path to that bag
+    :return: mmsid or None
+    """
     mmsid = re.findall("(?<!^)(?<!\d)\d{8,19}(?!\d)", bag_name)
     if mmsid:
         return mmsid[-1]
@@ -40,12 +41,24 @@ def get_marc_datafield(tag_id, xml_tree):
         return None
 
 def get_marc_subfield_text(tag_id, sub_code, xml_tree):
+    """
+    This is an internal function used for getting the sub field text from marc.xml.
+    :param tag_id: tag_id
+    :param sub_code: sub_code to get the title
+    :param xml_tree: marc.xml file.
+    :return: String or None
+    """
     try:
         return xml_tree.xpath("record/datafield[@tag={0}]/subfield[@code='{1}']".format(tag_id, sub_code))[0].text
     except IndexError:
         return None
 
 def get_title_from_marc(xml):
+    """
+    This field is used to get the title of the bag from marc.xml.
+    :param xml: marc xml
+    :return: String or None
+    """
     if xml is None:
         return None
     tag_preferences = OrderedDict([
@@ -67,6 +80,13 @@ def get_title_from_marc(xml):
             return title.strip(whitespace + "/,")
 
 def get_marc_xml(mmsid,path,bib):
+    """
+    This function is used to write the marc.xml file read from the bib record into the specified path.
+    :param mmsid: mmsid of the bag
+    :param path: path to which the marc.xml must to written to.
+    :param bib: bib record.
+    :return: boolean
+    """
     if bib is None:
         return False
     record = ET.fromstring(bib).find("record")
@@ -86,6 +106,8 @@ def get_marc_xml(mmsid,path,bib):
 def get_bib_record(mmsid):
     """
         Queries the ALMA with MMS ID to obtain corresponding MARC XML
+        :param mmsid: mmsid of the bag
+        :return bibrecord  or None
     """
     url = "https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/{0}?expand=None&apikey={1}"
 

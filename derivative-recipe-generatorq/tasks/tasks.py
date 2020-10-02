@@ -303,7 +303,7 @@ def recipe_file_creation(bag_name,mmsid,format_params,title=None):
 
 
 @task
-def insert_data_into_mongoDB():
+def insert_data_into_mongoDB(dbName="testing"):
     """
     This is a test function used for inserting records into local database.
 
@@ -314,10 +314,10 @@ def insert_data_into_mongoDB():
     results = jobj.get('results')
     db_client = app.backend.database.client
     print(db_client.database_names())
-    database = db_client["cybercom"]
+    database = db_client[dbName]
 
-    if not "catalog" in db_client.cybercom.collection_names():
-        mycol = database["catalog"]
+    if not "test-collection" in db_client.cybercom.collection_names():
+        mycol = database["test-collection"]
         for data in results:
             mycol.insert_one(data)
         return "successful"

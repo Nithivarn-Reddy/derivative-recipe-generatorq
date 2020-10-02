@@ -316,7 +316,7 @@ def insert_data_into_mongoDB(dbName="testing"):
     print(db_client.database_names())
     database = db_client[dbName]
 
-    if not "test-collection" in db_client.cybercom.collection_names():
+    if not "test-collection" in database.collection_names():
         mycol = database["test-collection"]
         for data in results:
             mycol.insert_one(data)

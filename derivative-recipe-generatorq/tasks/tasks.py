@@ -321,7 +321,8 @@ def insert_data_into_mongoDB(dbName="testing"):
         for data in results:
             mycol.insert_one(data)
         return "successful"
-    return "already exists"
+    else:
+        return "already exists"
    # mydict = {"name": "hello", "address": "Norman"}
     #x = mycol.insert_one(mydict)
 

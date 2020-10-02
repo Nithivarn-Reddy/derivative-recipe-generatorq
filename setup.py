@@ -5,7 +5,7 @@ setup(name='derivative-recipe-generatorq',
       version='0.0.0',
       packages= find_packages(),
       install_requires=[
-          'celery==4.1.0',
+          'celery',
           'bagit==1.7.0',
           'requests==2.20.0',
           'pyyaml>=4.2b1',

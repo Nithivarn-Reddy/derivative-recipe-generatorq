@@ -302,6 +302,7 @@ def recipe_file_creation(bag_name,mmsid,format_params,title=None):
         logging.error(err)
 
 
+@task
 def insert_data_into_mongoDB(dbName="catalog"):
     """
     This is a test function used for inserting records into local database.

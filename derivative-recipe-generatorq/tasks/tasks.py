@@ -302,7 +302,7 @@ def recipe_file_creation(bag_name,mmsid,format_params,title=None):
         logging.error(err)
 
 
-def insert_data_into_mongoDB(dbName="test-db"):
+def insert_data_into_mongoDB(dbName="catalog"):
     """
     This is a test function used for inserting records into local database.
 
@@ -315,8 +315,8 @@ def insert_data_into_mongoDB(dbName="test-db"):
     print(db_client.database_names())
     database = db_client[dbName]
 
-    if not "test-collection" in database.collection_names():
-        mycol = database["test-collection"]
+    if not "digital_objects" in database.collection_names():
+        mycol = database["digital_objects"]
         for data in results:
             mycol.insert_one(data)
         return "successful"
